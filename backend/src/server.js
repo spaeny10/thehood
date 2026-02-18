@@ -71,7 +71,7 @@ const frontendDist = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendDist));
 
 // SPA fallback — serve index.html for non-API routes
-app.get('*', (req, res, next) => {
+app.get('{*path}', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(frontendDist, 'index.html'), (err) => {
     if (err) res.status(404).json({ error: 'Frontend not built. Run npm run build in frontend/' });
