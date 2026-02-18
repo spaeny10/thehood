@@ -1,9 +1,14 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
+// Use /tmp on Vercel (serverless), local path otherwise
+const DB_PATH = process.env.VERCEL
+  ? '/tmp/weather2000.db'
+  : path.join(__dirname, '../../weather.db');
+
 // Create database connection
-const db = new Database(path.join(__dirname, '../../weather.db'), {
-  verbose: console.log
+const db = new Database(DB_PATH, {
+  verbose: process.env.VERCEL ? undefined : console.log
 });
 
 // Enable foreign keys

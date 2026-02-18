@@ -97,8 +97,10 @@ const lakeCollector = new LakeCollectorService();
 const retentionService = new RetentionService();
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`
+// Only start long-running services when running locally (not on Vercel serverless)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`
 ╔═══════════════════════════════════════╗
 ║     Kanopolanes API Server            ║
 ╚═══════════════════════════════════════╝
@@ -110,32 +112,33 @@ app.listen(PORT, () => {
 🔔 Alert monitoring: ${alertService.getStatus().checkInterval} min intervals
 🗑️  Data retention: daily cleanup at 3 AM
 
-  `);
+    `);
 
-  // Start background services
-  dataCollector.start();
-  alertService.start();
-  lakeCollector.start();
-  retentionService.start();
-});
+    // Start background services
+    dataCollector.start();
+    alertService.start();
+    lakeCollector.start();
+    retentionService.start();
+  });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('\n\nShutting down gracefully...');
-  dataCollector.stop();
-  alertService.stop();
-  lakeCollector.stop();
-  retentionService.stop();
-  process.exit(0);
-});
+  // Graceful shutdown
+  process.on('SIGINT', () => {
+    console.log('\n\nShutting down gracefully...');
+    dataCollector.stop();
+    alertService.stop();
+    lakeCollector.stop();
+    retentionService.stop();
+    process.exit(0);
+  });
 
-process.on('SIGTERM', () => {
-  console.log('\n\nShutting down gracefully...');
-  dataCollector.stop();
-  alertService.stop();
-  lakeCollector.stop();
-  retentionService.stop();
-  process.exit(0);
-});
+  process.on('SIGTERM', () => {
+    console.log('\n\nShutting down gracefully...');
+    dataCollector.stop();
+    alertService.stop();
+    lakeCollector.stop();
+    retentionService.stop();
+    process.exit(0);
+  });
+}
 
 module.exports = app;
