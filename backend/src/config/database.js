@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 
 const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+console.log(`[DB] Connection string: ${connectionString ? 'SET (' + connectionString.split('@')[1]?.split('/')[0] + ')' : '⚠️  NOT SET — add DATABASE_URL in Railway Variables'}`);
 
 const pool = new Pool({
   connectionString,
