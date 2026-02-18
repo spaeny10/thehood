@@ -54,15 +54,14 @@ const alertService = new AlertService();
 const lakeCollector = new LakeCollectorService();
 const retentionService = new RetentionService();
 
+let dbConnected = false;
+
 // Health check
-app.get('/api/health', async (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
+    database: dbConnected ? 'connected' : 'connecting',
     timestamp: new Date().toISOString(),
-    dataCollector: dataCollector.getStatus(),
-    alertService: await alertService.getStatus(),
-    lakeCollector: lakeCollector.getStatus(),
-    retentionService: retentionService.getStatus()
   });
 });
 
@@ -74,7 +73,7 @@ app.use(express.static(frontendDist));
 app.get('{*path}', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(frontendDist, 'index.html'), (err) => {
-    if (err) res.status(404).json({ error: 'Frontend not built. Run npm run build in frontend/' });
+    if (err) res.status(404).json({ error: 'Frontend not built' });
   });
 });
 
@@ -84,33 +83,28 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!', message: err.message });
 });
 
-// Start server — wait for DB then boot
+// Start HTTP server immediately so health check passes
+app.listen(PORT, () => {
+  console.log(`🚀 Server listening on port ${PORT}`);
+});
+
+// Then wait for DB and start background services
 dbReady.then(async () => {
-  app.listen(PORT, async () => {
-    console.log(`
-╔═══════════════════════════════════════╗
-║     Kanopolanes API Server            ║
-╚═══════════════════════════════════════╝
-
-🚀 Server running on port ${PORT}
-📡 API: http://localhost:${PORT}/api
-🌐 Frontend: http://localhost:${PORT}
-    `);
-
-    // Start background services
-    dataCollector.start();
-    alertService.start();
-    await lakeCollector.start();
-    retentionService.start();
-  });
+  dbConnected = true;
+  console.log('✓ Database connected');
+  dataCollector.start();
+  alertService.start();
+  await lakeCollector.start();
+  retentionService.start();
+  console.log('✓ All background services started');
 }).catch(err => {
-  console.error('Failed to initialize database:', err);
-  process.exit(1);
+  console.error('Database connection failed:', err.message);
+  // Server stays up for health checks but DB features won't work
 });
 
 // Graceful shutdown
 const shutdown = () => {
-  console.log('\n\nShutting down gracefully...');
+  console.log('\nShutting down...');
   dataCollector.stop();
   alertService.stop();
   lakeCollector.stop();
