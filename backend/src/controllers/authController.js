@@ -1,116 +1,176 @@
 const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 const jwt = require('jsonwebtoken');
-const db = require('../config/database');
+const bcrypt = require('bcryptjs');
+const { pool } = require('../config/database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'kanopolanes-default-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'kanopolanes-secret-change-me';
 const ADMIN_NAME = (process.env.ADMIN_FACEBOOK_NAME || 'Spaeny').toLowerCase();
 
-/* ─── Passport Facebook Strategy ─── */
+// ─── Passport Facebook Strategy ───
 passport.use(new FacebookStrategy({
-    clientID: process.env.FB_APP_ID,
-    clientSecret: process.env.FB_APP_SECRET,
-    callbackURL: '/api/auth/facebook/callback',
+    clientID: process.env.FB_APP_ID || 'placeholder',
+    clientSecret: process.env.FB_APP_SECRET || 'placeholder',
+    callbackURL: process.env.FB_CALLBACK_URL || '/api/auth/facebook/callback',
     profileFields: ['id', 'displayName', 'email', 'picture.type(large)'],
 },
-    (accessToken, refreshToken, profile, done) => {
+    async (accessToken, refreshToken, profile, done) => {
         try {
-            const fbId = profile.id;
+            const facebookId = profile.id;
             const name = profile.displayName || 'User';
             const email = profile.emails?.[0]?.value || '';
-            const pic = profile.photos?.[0]?.value || '';
+            const profilePic = profile.photos?.[0]?.value || '';
+            const role = name.toLowerCase().includes(ADMIN_NAME) ? 'admin' : 'member';
 
-            // Check if user exists
-            let user = db.prepare('SELECT * FROM users WHERE facebook_id = ?').get(fbId);
+            const existing = await pool.query('SELECT * FROM users WHERE facebook_id = $1', [facebookId]);
 
-            if (!user) {
-                // Determine role — admin if name matches
-                const role = name.toLowerCase().includes(ADMIN_NAME) ? 'admin' : 'member';
-                db.prepare(`
-          INSERT INTO users (facebook_id, name, email, profile_pic, role)
-          VALUES (?, ?, ?, ?, ?)
-        `).run(fbId, name, email, pic, role);
-                user = db.prepare('SELECT * FROM users WHERE facebook_id = ?').get(fbId);
-                console.log(`[Auth] New user created: ${name} (${role})`);
+            let user;
+            if (existing.rows[0]) {
+                const { rows } = await pool.query(
+                    `UPDATE users SET name=$1, email=$2, profile_pic=$3 WHERE facebook_id=$4 RETURNING *`,
+                    [name, email, profilePic, facebookId]
+                );
+                user = rows[0];
             } else {
-                // Update profile pic and name on each login
-                db.prepare('UPDATE users SET name = ?, profile_pic = ? WHERE facebook_id = ?')
-                    .run(name, pic, fbId);
-                user.name = name;
-                user.profile_pic = pic;
+                const { rows } = await pool.query(
+                    `INSERT INTO users (facebook_id, name, email, profile_pic, role) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+                    [facebookId, name, email, profilePic, role]
+                );
+                user = rows[0];
+                console.log(`[Auth] New FB user: ${name} (${role})`);
             }
 
             return done(null, user);
         } catch (err) {
-            return done(err);
+            return done(err, null);
         }
     }
 ));
 
 passport.serializeUser((user, done) => done(null, user.id));
-passport.deserializeUser((id, done) => {
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
-    done(null, user);
+passport.deserializeUser(async (id, done) => {
+    try {
+        const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+        done(null, rows[0] || null);
+    } catch (err) {
+        done(err, null);
+    }
 });
 
-/* ─── Generate JWT ─── */
 function generateToken(user) {
     return jwt.sign(
-        { id: user.id, facebook_id: user.facebook_id, name: user.name, role: user.role },
+        { id: user.id, name: user.name, role: user.role },
         JWT_SECRET,
         { expiresIn: '7d' }
     );
 }
 
-/* ─── Route Handlers ─── */
+// ─── Facebook OAuth ───
+const facebookLogin = passport.authenticate('facebook', { scope: ['email'] });
 
-// GET /api/auth/facebook — redirect to Facebook
-const facebookLogin = passport.authenticate('facebook', {
-    scope: ['public_profile', 'email'],
-});
-
-// GET /api/auth/facebook/callback
-const facebookCallback = [
-    passport.authenticate('facebook', { failureRedirect: '/?auth=failed', session: false }),
-    (req, res) => {
-        const token = generateToken(req.user);
-        // Redirect back to frontend with token in URL
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const facebookCallback = (req, res, next) => {
+    passport.authenticate('facebook', { session: false }, (err, user) => {
+        if (err || !user) {
+            const frontendUrl = process.env.FRONTEND_URL || '/';
+            return res.redirect(`${frontendUrl}?auth_error=true`);
+        }
+        const token = generateToken(user);
+        const frontendUrl = process.env.FRONTEND_URL || '/';
         res.redirect(`${frontendUrl}?token=${token}`);
-    },
-];
-
-// GET /api/auth/me
-const getMe = (req, res) => {
-    res.json(req.user);
+    })(req, res, next);
 };
 
-// GET /api/auth/users — admin only
-const getAllUsers = (req, res) => {
+// ─── Local Registration ───
+const register = async (req, res) => {
     try {
-        const users = db.prepare('SELECT id, facebook_id, name, email, profile_pic, role, created_at FROM users ORDER BY created_at ASC').all();
-        res.json(users);
+        const { username, password, name, email } = req.body;
+        if (!username || !password || !name) {
+            return res.status(400).json({ error: 'Username, password, and name are required' });
+        }
+        if (username.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters' });
+        if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+
+        // Check if username taken
+        const existing = await pool.query('SELECT id FROM users WHERE username = $1', [username.toLowerCase()]);
+        if (existing.rows[0]) return res.status(409).json({ error: 'Username already taken' });
+
+        const password_hash = await bcrypt.hash(password, 10);
+        const role = name.toLowerCase().includes(ADMIN_NAME) ? 'admin' : 'member';
+
+        const { rows } = await pool.query(
+            `INSERT INTO users (username, password_hash, name, email, role) VALUES ($1,$2,$3,$4,$5) RETURNING id, username, name, email, profile_pic, role, created_at`,
+            [username.toLowerCase(), password_hash, name, email || '', role]
+        );
+
+        console.log(`[Auth] New local user: ${name} (${role})`);
+        const token = generateToken(rows[0]);
+        res.status(201).json({ token, user: rows[0] });
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Registration failed' });
+    }
+};
+
+// ─── Local Login ───
+const login = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+        const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username.toLowerCase()]);
+        const user = rows[0];
+        if (!user || !user.password_hash) return res.status(401).json({ error: 'Invalid username or password' });
+
+        const valid = await bcrypt.compare(password, user.password_hash);
+        if (!valid) return res.status(401).json({ error: 'Invalid username or password' });
+
+        const token = generateToken(user);
+        res.json({ token, user: { id: user.id, username: user.username, name: user.name, email: user.email, profile_pic: user.profile_pic, role: user.role } });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Login failed' });
+    }
+};
+
+// ─── Current User ───
+const getCurrentUser = async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT id, facebook_id, username, name, email, profile_pic, role, created_at FROM users WHERE id = $1', [req.user.id]);
+        if (!rows[0]) return res.status(404).json({ error: 'User not found' });
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error getting current user:', error);
+        res.status(500).json({ error: 'Failed to get user info' });
+    }
+};
+
+// ─── Admin: list users ───
+const getAllUsers = async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT id, facebook_id, username, name, email, profile_pic, role, created_at FROM users ORDER BY created_at DESC');
+        res.json(rows);
     } catch (error) {
         console.error('Error getting users:', error);
         res.status(500).json({ error: 'Failed to get users' });
     }
 };
 
-// PUT /api/auth/users/:id/role — admin only
-const updateUserRole = (req, res) => {
+// ─── Admin: update role ───
+const updateUserRole = async (req, res) => {
     try {
         const { id } = req.params;
         const { role } = req.body;
-        if (!['admin', 'member'].includes(role)) {
-            return res.status(400).json({ error: 'Role must be admin or member' });
-        }
-        db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, id);
-        const user = db.prepare('SELECT id, facebook_id, name, email, profile_pic, role, created_at FROM users WHERE id = ?').get(id);
-        res.json(user);
+        if (!['admin', 'member'].includes(role)) return res.status(400).json({ error: 'Invalid role' });
+        const { rows, rowCount } = await pool.query(
+            `UPDATE users SET role = $1 WHERE id = $2 RETURNING id, username, name, email, profile_pic, role, created_at`,
+            [role, id]
+        );
+        if (rowCount === 0) return res.status(404).json({ error: 'User not found' });
+        res.json(rows[0]);
     } catch (error) {
-        console.error('Error updating role:', error);
-        res.status(500).json({ error: 'Failed to update role' });
+        console.error('Error updating user role:', error);
+        res.status(500).json({ error: 'Failed to update user role' });
     }
 };
 
-module.exports = { facebookLogin, facebookCallback, getMe, getAllUsers, updateUserRole, generateToken };
+module.exports = { facebookLogin, facebookCallback, register, login, getCurrentUser, getAllUsers, updateUserRole };

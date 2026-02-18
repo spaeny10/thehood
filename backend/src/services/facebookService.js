@@ -8,19 +8,17 @@ class FacebookService {
     constructor() {
         this.cache = { feed: null, events: null };
         this.cacheTime = { feed: 0, events: 0 };
-        this.CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+        this.CACHE_TTL = 5 * 60 * 1000;
     }
 
-    getToken() {
-        // Try env var first, then settings
-        return process.env.FB_ACCESS_TOKEN || settingsService.get('fb_access_token') || '';
+    async getToken() {
+        return process.env.FB_ACCESS_TOKEN || await settingsService.get('fb_access_token') || '';
     }
 
     async getFeed() {
-        const token = this.getToken();
+        const token = await this.getToken();
         if (!token) return { posts: [], configured: false };
 
-        // Check cache
         if (this.cache.feed && Date.now() - this.cacheTime.feed < this.CACHE_TTL) {
             return { posts: this.cache.feed, configured: true };
         }
@@ -29,7 +27,7 @@ class FacebookService {
             const res = await axios.get(`${FB_GRAPH_URL}/${FB_GROUP_ID}/feed`, {
                 params: {
                     access_token: token,
-                    fields: 'id,message,created_time,from,full_picture,permalink_url,type,attachments{media,description,title,type,url},updated_time',
+                    fields: 'id,message,created_time,from,full_picture,permalink_url,type,attachments{media,description,title,type,url}',
                     limit: 25,
                 },
             });
@@ -55,7 +53,7 @@ class FacebookService {
     }
 
     async getEvents() {
-        const token = this.getToken();
+        const token = await this.getToken();
         if (!token) return { events: [], configured: false };
 
         if (this.cache.events && Date.now() - this.cacheTime.events < this.CACHE_TTL) {

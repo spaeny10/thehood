@@ -13,11 +13,8 @@ export function AuthProvider({ children }) {
 
     const setToken = useCallback((t) => {
         setTokenState(t);
-        if (t) {
-            localStorage.setItem('auth_token', t);
-        } else {
-            localStorage.removeItem('auth_token');
-        }
+        if (t) localStorage.setItem('auth_token', t);
+        else localStorage.removeItem('auth_token');
     }, []);
 
     // Check for token in URL (from OAuth redirect)
@@ -26,57 +23,63 @@ export function AuthProvider({ children }) {
         const urlToken = params.get('token');
         if (urlToken) {
             setToken(urlToken);
-            // Clean up URL
             window.history.replaceState({}, '', window.location.pathname);
         }
     }, [setToken]);
 
     // Fetch current user when token changes
     useEffect(() => {
-        if (!token) {
-            setUser(null);
-            setLoading(false);
-            return;
-        }
-
+        if (!token) { setUser(null); setLoading(false); return; }
         (async () => {
             try {
-                const res = await fetch(`${API_BASE}/auth/me`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setUser(data);
-                } else {
-                    setToken(null);
-                    setUser(null);
-                }
-            } catch {
-                setToken(null);
-                setUser(null);
-            } finally {
-                setLoading(false);
-            }
+                const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+                if (res.ok) setUser(await res.json());
+                else { setToken(null); setUser(null); }
+            } catch { setToken(null); setUser(null); }
+            finally { setLoading(false); }
         })();
     }, [token, setToken]);
 
-    const login = () => {
+    // Facebook login
+    const loginFacebook = () => {
         window.location.href = `${API_BASE}/auth/facebook`;
     };
 
-    const logout = () => {
-        setToken(null);
-        setUser(null);
+    // Local login
+    const loginLocal = async (username, password) => {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        setToken(data.token);
+        setUser(data.user);
+        return data;
     };
 
+    // Register
+    const register = async (username, password, name, email) => {
+        const res = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, name, email }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Registration failed');
+        setToken(data.token);
+        setUser(data.user);
+        return data;
+    };
+
+    const logout = () => { setToken(null); setUser(null); };
+
     const value = {
-        user,
-        token,
-        loading,
+        user, token, loading,
         isLoggedIn: !!user,
         isAdmin: user?.role === 'admin',
-        login,
-        logout,
+        loginFacebook, loginLocal, register, logout,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const db = require('../config/database');
+const { pool } = require('../config/database');
 const settingsService = require('./settingsService');
 
 class RetentionService {
@@ -8,67 +8,45 @@ class RetentionService {
         this.cronJob = null;
     }
 
-    /**
-     * Start daily retention cleanup (runs at 3 AM)
-     */
     start() {
         if (this.isRunning) return;
-
-        // Run cleanup once on startup
         this.cleanup();
-
-        // Schedule daily at 3:00 AM
-        this.cronJob = cron.schedule('0 3 * * *', () => {
-            this.cleanup();
-        });
-
+        this.cronJob = cron.schedule('0 3 * * *', () => this.cleanup());
         this.isRunning = true;
         console.log('✓ Retention service started (daily cleanup at 3 AM)');
     }
 
-    /**
-     * Stop the service
-     */
     stop() {
-        if (this.cronJob) {
-            this.cronJob.stop();
-            this.isRunning = false;
-            console.log('✓ Retention service stopped');
-        }
+        if (this.cronJob) { this.cronJob.stop(); this.isRunning = false; console.log('✓ Retention service stopped'); }
     }
 
-    /**
-     * Run cleanup based on configured retention days
-     */
-    cleanup() {
+    async cleanup() {
         try {
-            const weatherDays = settingsService.getNumber('data_retention_days') || 90;
-            const lakeDays = settingsService.getNumber('lake_retention_days') || 180;
-            const alertDays = settingsService.getNumber('alert_history_retention_days') || 30;
+            const weatherDays = await settingsService.getNumber('data_retention_days') || 90;
+            const lakeDays = await settingsService.getNumber('lake_retention_days') || 180;
+            const alertDays = await settingsService.getNumber('alert_history_retention_days') || 30;
 
             const now = Date.now();
             const weatherCutoff = now - (weatherDays * 24 * 60 * 60 * 1000);
             const lakeCutoff = now - (lakeDays * 24 * 60 * 60 * 1000);
             const alertCutoff = new Date(now - (alertDays * 24 * 60 * 60 * 1000)).toISOString();
 
-            const weatherResult = db.prepare('DELETE FROM weather_data WHERE timestamp < ?').run(weatherCutoff);
-            const lakeResult = db.prepare('DELETE FROM lake_data WHERE timestamp < ?').run(lakeCutoff);
-            const alertResult = db.prepare('DELETE FROM alert_history WHERE triggered_at < ?').run(alertCutoff);
+            const w = await pool.query('DELETE FROM weather_data WHERE timestamp < $1', [weatherCutoff]);
+            const l = await pool.query('DELETE FROM lake_data WHERE timestamp < $1', [lakeCutoff]);
+            const a = await pool.query('DELETE FROM alert_history WHERE triggered_at < $1', [alertCutoff]);
 
-            const total = weatherResult.changes + lakeResult.changes + alertResult.changes;
+            const total = (w.rowCount || 0) + (l.rowCount || 0) + (a.rowCount || 0);
             if (total > 0) {
-                console.log(`[Retention] Cleaned up: ${weatherResult.changes} weather, ${lakeResult.changes} lake, ${alertResult.changes} alert history records`);
+                console.log(`[Retention] Cleaned up: ${w.rowCount} weather, ${l.rowCount} lake, ${a.rowCount} alert history records`);
             } else {
                 console.log('[Retention] No records to clean up');
             }
         } catch (error) {
-            console.error('[Retention] Error during cleanup:', error.message);
+            console.error('[Retention] Error:', error.message);
         }
     }
 
-    getStatus() {
-        return { isRunning: this.isRunning };
-    }
+    getStatus() { return { isRunning: this.isRunning }; }
 }
 
 module.exports = RetentionService;

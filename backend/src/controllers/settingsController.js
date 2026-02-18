@@ -1,8 +1,8 @@
 const settingsService = require('../services/settingsService');
 
-const getSettings = (req, res) => {
+const getSettings = async (req, res) => {
     try {
-        const settings = settingsService.getAll();
+        const settings = await settingsService.getAll();
         res.json(settings);
     } catch (error) {
         console.error('Error getting settings:', error);
@@ -10,13 +10,13 @@ const getSettings = (req, res) => {
     }
 };
 
-const updateSettings = (req, res) => {
+const updateSettings = async (req, res) => {
     try {
         const settings = req.body;
         if (!settings || typeof settings !== 'object') {
             return res.status(400).json({ error: 'Invalid settings object' });
         }
-        const updated = settingsService.update(settings);
+        const updated = await settingsService.update(settings);
         res.json(updated);
     } catch (error) {
         console.error('Error updating settings:', error);
@@ -24,9 +24,9 @@ const updateSettings = (req, res) => {
     }
 };
 
-const getStats = (req, res) => {
+const getStats = async (req, res) => {
     try {
-        const stats = settingsService.getStats();
+        const stats = await settingsService.getStats();
         res.json(stats);
     } catch (error) {
         console.error('Error getting stats:', error);
@@ -34,13 +34,11 @@ const getStats = (req, res) => {
     }
 };
 
-const purgeData = (req, res) => {
+const purgeData = async (req, res) => {
     try {
         const { type } = req.body;
-        if (!type) {
-            return res.status(400).json({ error: 'Purge type required' });
-        }
-        const result = settingsService.purge(type);
+        if (!type) return res.status(400).json({ error: 'Purge type required' });
+        const result = await settingsService.purge(type);
         res.json(result);
     } catch (error) {
         console.error('Error purging data:', error);

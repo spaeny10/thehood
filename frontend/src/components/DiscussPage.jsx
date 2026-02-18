@@ -33,7 +33,7 @@ function timeAgo(dateStr) {
 
 /* ═══════════════════════ MAIN COMPONENT ═══════════════════════ */
 const DiscussPage = ({ onNavigate }) => {
-  const { user, isLoggedIn, isAdmin, login } = useAuth();
+  const { user, isLoggedIn, isAdmin } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState('all');
@@ -170,8 +170,8 @@ const DiscussPage = ({ onNavigate }) => {
             {CATEGORIES.map(c => (
               <button key={c.key} onClick={() => setCategory(c.key)}
                 className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${category === c.key
-                    ? 'text-white'
-                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40'
+                  ? 'text-white'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40'
                   }`}
                 style={category === c.key ? { background: `${c.color}15`, color: c.color } : {}}>
                 {c.label}
@@ -199,12 +199,8 @@ const DiscussPage = ({ onNavigate }) => {
               </span>
             </button>
           ) : (
-            <div className="w-full flex items-center justify-between px-4 py-3 bg-dark-card border border-dark-border rounded-2xl">
+            <div className="w-full flex items-center justify-center px-4 py-3 bg-dark-card border border-dark-border rounded-2xl">
               <span className="text-sm text-slate-500">Sign in to post and comment</span>
-              <button onClick={login}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1877F2] hover:bg-[#1877F2]/90 text-white text-xs font-semibold transition-all shadow-lg shadow-[#1877F2]/20">
-                <LogIn className="w-3.5 h-3.5" /> Sign in with Facebook
-              </button>
             </div>
           )}
 
@@ -552,8 +548,8 @@ const UserManagement = ({ onClose }) => {
                 </div>
                 <button onClick={() => toggleRole(u.id, u.role)}
                   className={`px-3 py-1 rounded-lg text-[10px] font-semibold transition-all ${u.role === 'admin'
-                      ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
-                      : 'bg-slate-800/50 text-slate-500 border border-dark-border hover:border-amber-500/20 hover:text-amber-400'
+                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                    : 'bg-slate-800/50 text-slate-500 border border-dark-border hover:border-amber-500/20 hover:text-amber-400'
                     }`}>
                   {u.role === 'admin' ? '★ Admin' : 'Member'}
                 </button>

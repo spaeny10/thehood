@@ -1,58 +1,50 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
 /* ─── POSTS ─── */
-const getAllPosts = (req, res) => {
+const getAllPosts = async (req, res) => {
     try {
         const category = req.query.category;
-        let posts;
+        let rows;
         if (category && category !== 'all') {
-            posts = db.prepare(`
-        SELECT d.*,
-          (SELECT COUNT(*) FROM discussion_comments c WHERE c.discussion_id = d.id) as comment_count
-        FROM discussions d
-        WHERE d.category = ?
+            ({ rows } = await pool.query(`
+        SELECT d.*, (SELECT COUNT(*) FROM discussion_comments c WHERE c.discussion_id = d.id) as comment_count
+        FROM discussions d WHERE d.category = $1
         ORDER BY d.pinned DESC, d.created_at DESC
-      `).all(category);
+      `, [category]));
         } else {
-            posts = db.prepare(`
-        SELECT d.*,
-          (SELECT COUNT(*) FROM discussion_comments c WHERE c.discussion_id = d.id) as comment_count
+            ({ rows } = await pool.query(`
+        SELECT d.*, (SELECT COUNT(*) FROM discussion_comments c WHERE c.discussion_id = d.id) as comment_count
         FROM discussions d
         ORDER BY d.pinned DESC, d.created_at DESC
-      `).all();
+      `));
         }
-        res.json(posts);
+        res.json(rows);
     } catch (error) {
         console.error('Error getting posts:', error);
         res.status(500).json({ error: 'Failed to get posts' });
     }
 };
 
-const createPost = (req, res) => {
+const createPost = async (req, res) => {
     try {
         const { message, category } = req.body;
         if (!message?.trim()) return res.status(400).json({ error: 'Message is required' });
-
-        // Use logged-in user name if available, otherwise fallback to body.author
         const author = req.user?.name || req.body.author?.trim() || 'Anonymous';
 
-        const result = db.prepare(`
-      INSERT INTO discussions (author, message, category)
-      VALUES (?, ?, ?)
-    `).run(author, message.trim(), category || 'general');
-
-        const post = db.prepare('SELECT * FROM discussions WHERE id = ?').get(result.lastInsertRowid);
-        res.status(201).json(post);
+        const { rows } = await pool.query(
+            `INSERT INTO discussions (author, message, category) VALUES ($1,$2,$3) RETURNING *`,
+            [author, message.trim(), category || 'general']
+        );
+        res.status(201).json(rows[0]);
     } catch (error) {
         console.error('Error creating post:', error);
         res.status(500).json({ error: 'Failed to create post' });
     }
 };
 
-const deletePost = (req, res) => {
+const deletePost = async (req, res) => {
     try {
-        const { id } = req.params;
-        db.prepare('DELETE FROM discussions WHERE id = ?').run(id);
+        await pool.query('DELETE FROM discussions WHERE id = $1', [req.params.id]);
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting post:', error);
@@ -60,24 +52,26 @@ const deletePost = (req, res) => {
     }
 };
 
-const togglePin = (req, res) => {
+const togglePin = async (req, res) => {
     try {
-        const { id } = req.params;
-        db.prepare('UPDATE discussions SET pinned = CASE WHEN pinned = 1 THEN 0 ELSE 1 END WHERE id = ?').run(id);
-        const post = db.prepare('SELECT * FROM discussions WHERE id = ?').get(id);
-        res.json(post);
+        const { rows } = await pool.query(
+            `UPDATE discussions SET pinned = CASE WHEN pinned = 1 THEN 0 ELSE 1 END WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        res.json(rows[0]);
     } catch (error) {
         console.error('Error toggling pin:', error);
         res.status(500).json({ error: 'Failed to toggle pin' });
     }
 };
 
-const likePost = (req, res) => {
+const likePost = async (req, res) => {
     try {
-        const { id } = req.params;
-        db.prepare('UPDATE discussions SET likes = likes + 1 WHERE id = ?').run(id);
-        const post = db.prepare('SELECT * FROM discussions WHERE id = ?').get(id);
-        res.json(post);
+        const { rows } = await pool.query(
+            `UPDATE discussions SET likes = likes + 1 WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        res.json(rows[0]);
     } catch (error) {
         console.error('Error liking post:', error);
         res.status(500).json({ error: 'Failed to like post' });
@@ -85,44 +79,41 @@ const likePost = (req, res) => {
 };
 
 /* ─── COMMENTS ─── */
-const getComments = (req, res) => {
+const getComments = async (req, res) => {
     try {
-        const { id } = req.params;
-        const comments = db.prepare('SELECT * FROM discussion_comments WHERE discussion_id = ? ORDER BY created_at ASC').all(id);
-        res.json(comments);
+        const { rows } = await pool.query(
+            'SELECT * FROM discussion_comments WHERE discussion_id = $1 ORDER BY created_at ASC',
+            [req.params.id]
+        );
+        res.json(rows);
     } catch (error) {
         console.error('Error getting comments:', error);
         res.status(500).json({ error: 'Failed to get comments' });
     }
 };
 
-const addComment = (req, res) => {
+const addComment = async (req, res) => {
     try {
         const { id } = req.params;
         const { message } = req.body;
         if (!message?.trim()) return res.status(400).json({ error: 'Message is required' });
-
         const author = req.user?.name || req.body.author?.trim() || 'Anonymous';
 
-        const result = db.prepare(`
-      INSERT INTO discussion_comments (discussion_id, author, message)
-      VALUES (?, ?, ?)
-    `).run(id, author, message.trim());
-
-        db.prepare('UPDATE discussions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(id);
-
-        const comment = db.prepare('SELECT * FROM discussion_comments WHERE id = ?').get(result.lastInsertRowid);
-        res.status(201).json(comment);
+        const { rows } = await pool.query(
+            `INSERT INTO discussion_comments (discussion_id, author, message) VALUES ($1,$2,$3) RETURNING *`,
+            [id, author, message.trim()]
+        );
+        await pool.query('UPDATE discussions SET updated_at = NOW() WHERE id = $1', [id]);
+        res.status(201).json(rows[0]);
     } catch (error) {
         console.error('Error adding comment:', error);
         res.status(500).json({ error: 'Failed to add comment' });
     }
 };
 
-const deleteComment = (req, res) => {
+const deleteComment = async (req, res) => {
     try {
-        const { commentId } = req.params;
-        db.prepare('DELETE FROM discussion_comments WHERE id = ?').run(commentId);
+        await pool.query('DELETE FROM discussion_comments WHERE id = $1', [req.params.commentId]);
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting comment:', error);

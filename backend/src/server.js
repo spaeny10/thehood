@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const passport = require('passport');
+const { dbReady } = require('./config/database');
 const weatherRoutes = require('./routes/weatherRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const forecastRoutes = require('./routes/forecastRoutes');
@@ -47,13 +48,19 @@ app.use('/api/facebook', facebookRoutes);
 app.use('/api/discussions', discussionRoutes);
 app.use('/api/auth', authRoutes);
 
+// Initialize services
+const dataCollector = new DataCollectorService();
+const alertService = new AlertService();
+const lakeCollector = new LakeCollectorService();
+const retentionService = new RetentionService();
+
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     dataCollector: dataCollector.getStatus(),
-    alertService: alertService.getStatus(),
+    alertService: await alertService.getStatus(),
     lakeCollector: lakeCollector.getStatus(),
     retentionService: retentionService.getStatus()
   });
@@ -61,28 +68,13 @@ app.get('/api/health', (req, res) => {
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({
-    name: 'Kanopolanes API',
-    version: '1.0.0',
-    endpoints: {
-      weather: '/api/weather',
-      alerts: '/api/alerts',
-      forecast: '/api/forecast',
-      lake: '/api/lake',
-      settings: '/api/settings',
-      lots: '/api/lots',
-      health: '/api/health'
-    }
-  });
+  res.json({ name: 'Kanopolanes API', version: '1.0.0' });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({
-    error: 'Something went wrong!',
-    message: err.message
-  });
+  res.status(500).json({ error: 'Something went wrong!', message: err.message });
 });
 
 // 404 handler
@@ -90,35 +82,28 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Initialize services
-const dataCollector = new DataCollectorService();
-const alertService = new AlertService();
-const lakeCollector = new LakeCollectorService();
-const retentionService = new RetentionService();
-
-// Start server
 // Only start long-running services when running locally (not on Vercel serverless)
 if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`
+  dbReady.then(async () => {
+    app.listen(PORT, async () => {
+      console.log(`
 ╔═══════════════════════════════════════╗
 ║     Kanopolanes API Server            ║
 ╚═══════════════════════════════════════╝
 
 🚀 Server running on port ${PORT}
 📡 API endpoints available at http://localhost:${PORT}/api
-🌤️  Weather data collection: ${dataCollector.getStatus().collectInterval} min intervals
-🌊 Lake data collection: ${lakeCollector.getStatus().collectInterval} min intervals
-🔔 Alert monitoring: ${alertService.getStatus().checkInterval} min intervals
-🗑️  Data retention: daily cleanup at 3 AM
+      `);
 
-    `);
-
-    // Start background services
-    dataCollector.start();
-    alertService.start();
-    lakeCollector.start();
-    retentionService.start();
+      // Start background services
+      dataCollector.start();
+      alertService.start();
+      await lakeCollector.start();
+      retentionService.start();
+    });
+  }).catch(err => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
   });
 
   // Graceful shutdown
