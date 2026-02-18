@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const session = require('express-session');
 const passport = require('passport');
 const { dbReady } = require('./config/database');
@@ -13,7 +14,6 @@ const lotsRoutes = require('./routes/lotsRoutes');
 const facebookRoutes = require('./routes/facebookRoutes');
 const discussionRoutes = require('./routes/discussionRoutes');
 const authRoutes = require('./routes/authRoutes');
-// Load passport strategy
 require('./controllers/authController');
 const DataCollectorService = require('./services/dataCollector');
 const AlertService = require('./services/alertService');
@@ -37,7 +37,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// API Routes
 app.use('/api/weather', weatherRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/forecast', forecastRoutes);
@@ -66,9 +66,16 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({ name: 'Kanopolanes API', version: '1.0.0' });
+// Serve frontend static files in production
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDist));
+
+// SPA fallback — serve index.html for non-API routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  res.sendFile(path.join(frontendDist, 'index.html'), (err) => {
+    if (err) res.status(404).json({ error: 'Frontend not built. Run npm run build in frontend/' });
+  });
 });
 
 // Error handling middleware
@@ -77,53 +84,41 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!', message: err.message });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-
-// Only start long-running services when running locally (not on Vercel serverless)
-if (!process.env.VERCEL) {
-  dbReady.then(async () => {
-    app.listen(PORT, async () => {
-      console.log(`
+// Start server — wait for DB then boot
+dbReady.then(async () => {
+  app.listen(PORT, async () => {
+    console.log(`
 ╔═══════════════════════════════════════╗
 ║     Kanopolanes API Server            ║
 ╚═══════════════════════════════════════╝
 
 🚀 Server running on port ${PORT}
-📡 API endpoints available at http://localhost:${PORT}/api
-      `);
+📡 API: http://localhost:${PORT}/api
+🌐 Frontend: http://localhost:${PORT}
+    `);
 
-      // Start background services
-      dataCollector.start();
-      alertService.start();
-      await lakeCollector.start();
-      retentionService.start();
-    });
-  }).catch(err => {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
+    // Start background services
+    dataCollector.start();
+    alertService.start();
+    await lakeCollector.start();
+    retentionService.start();
   });
+}).catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
+});
 
-  // Graceful shutdown
-  process.on('SIGINT', () => {
-    console.log('\n\nShutting down gracefully...');
-    dataCollector.stop();
-    alertService.stop();
-    lakeCollector.stop();
-    retentionService.stop();
-    process.exit(0);
-  });
+// Graceful shutdown
+const shutdown = () => {
+  console.log('\n\nShutting down gracefully...');
+  dataCollector.stop();
+  alertService.stop();
+  lakeCollector.stop();
+  retentionService.stop();
+  process.exit(0);
+};
 
-  process.on('SIGTERM', () => {
-    console.log('\n\nShutting down gracefully...');
-    dataCollector.stop();
-    alertService.stop();
-    lakeCollector.stop();
-    retentionService.stop();
-    process.exit(0);
-  });
-}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 module.exports = app;

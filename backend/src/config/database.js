@@ -1,8 +1,12 @@
 const { Pool } = require('pg');
 
+const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : false,
+  connectionString,
+  ssl: connectionString && !connectionString.includes('localhost')
+    ? { rejectUnauthorized: false }
+    : false,
 });
 
 /* ─── initialise schema ─── */
