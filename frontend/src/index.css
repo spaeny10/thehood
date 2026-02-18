@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dark-bg: #0a0a0f;
+  --color-dark-card: #12121a;
+  --color-dark-border: #1a1a2e;
+  --color-purple-accent: #8b5cf6;
+  --color-purple-light: #a78bfa;
+}
+
+:root {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #0a0a0f;
+  color: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@utility card {
+  background-color: var(--color-dark-card);
+  border: 1px solid var(--color-dark-border);
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+
+@utility card-hover {
+  transition-property: all;
+  transition-duration: 200ms;
+
+  &:hover {
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.05);
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #1a1a2e;
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
