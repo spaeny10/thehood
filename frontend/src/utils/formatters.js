@@ -27,13 +27,15 @@ export const formatPressure = (pressure) => {
 
 export const formatDateTime = (timestamp) => {
   if (!timestamp) return '--';
-  const date = new Date(timestamp);
+  const date = new Date(Number(timestamp));
+  if (isNaN(date.getTime())) return '--';
   return format(date, 'MMM d, h:mm a');
 };
 
 export const formatTime = (timestamp) => {
   if (!timestamp) return '--';
-  const date = new Date(timestamp);
+  const date = new Date(Number(timestamp));
+  if (isNaN(date.getTime())) return '--';
   return format(date, 'h:mm a');
 };
 

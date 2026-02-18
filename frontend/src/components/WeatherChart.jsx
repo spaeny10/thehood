@@ -27,7 +27,7 @@ const WeatherChart = ({ data, dataKeys, title, yAxisLabel }) => {
     );
   }
 
-  const sortedData = [...data].reverse();
+  const sortedData = [...data].reverse().map(d => ({ ...d, timestamp: Number(d.timestamp) }));
 
   return (
     <div className="card card-hover">
