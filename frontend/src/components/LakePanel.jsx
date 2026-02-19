@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Waves, Thermometer, ArrowDownToLine, Activity, TrendingUp, Fish, ExternalLink } from 'lucide-react';
+import { Waves, Thermometer, ArrowDownToLine, Activity, TrendingUp, Fish, ExternalLink, ChevronDown } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { lakeApi } from '../services/api';
 
@@ -7,6 +7,7 @@ const LakePanel = ({ data }) => {
     const [history, setHistory] = useState([]);
     const [timeRange, setTimeRange] = useState(168); // 7 days default
     const [fishingReport, setFishingReport] = useState(null);
+    const [trendsOpen, setTrendsOpen] = useState(false);
 
     useEffect(() => {
         loadHistory();
@@ -164,74 +165,79 @@ const LakePanel = ({ data }) => {
             {/* ═══ LAKE TRENDS ═══ */}
             {history.length > 1 && (
                 <div className="card">
-                    <div className="flex items-center justify-between mb-4">
+                    <button onClick={() => setTrendsOpen(!trendsOpen)} className="flex items-center justify-between w-full mb-0 cursor-pointer" style={{ background: 'none', border: 'none', padding: 0 }}>
                         <div className="flex items-center gap-2">
                             <TrendingUp className="w-5 h-5 text-cyan-400" />
                             <h3 className="text-base font-bold text-white">Lake Trends</h3>
                         </div>
-                        <div className="flex items-center gap-1">
-                            {[{ label: '24h', hours: 24 }, { label: '3d', hours: 72 }, { label: '7d', hours: 168 }, { label: '30d', hours: 720 }].map(opt => (
-                                <button key={opt.hours} onClick={() => setTimeRange(opt.hours)}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${timeRange === opt.hours
-                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                                        : 'text-slate-500 hover:text-slate-300'
-                                        }`}>
-                                    {opt.label}
-                                </button>
-                            ))}
+                        <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${trendsOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {trendsOpen && (
+                        <div>
+                            <div className="flex items-center justify-end gap-1 mt-3 mb-4">
+                                {[{ label: '24h', hours: 24 }, { label: '3d', hours: 72 }, { label: '7d', hours: 168 }, { label: '30d', hours: 720 }].map(opt => (
+                                    <button key={opt.hours} onClick={() => setTimeRange(opt.hours)}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${timeRange === opt.hours
+                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                            : 'text-slate-500 hover:text-slate-300'
+                                            }`}>
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Elevation Chart */}
+                            <div className="mb-6">
+                                <p className="text-xs font-medium text-slate-400 mb-2">Pool Elevation (ft)</p>
+                                <ResponsiveContainer width="100%" height={160}>
+                                    <AreaChart data={history}>
+                                        <defs>
+                                            <linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.3} />
+                                                <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
+                                        <YAxis domain={['dataMin - 0.1', 'dataMax + 0.1']} tick={{ fontSize: 10, fill: '#64748b' }} width={55} />
+                                        <Tooltip {...chartTooltipStyle} formatter={(v) => [`${Number(v).toFixed(2)} ft`, 'Elevation']} />
+                                        <Area type="monotone" dataKey="elevation" stroke="#06b6d4" fill="url(#elevGrad)" strokeWidth={2} dot={false} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            {/* Water Temp Chart */}
+                            <div className="mb-6">
+                                <p className="text-xs font-medium text-slate-400 mb-2">Water Temperature (°F)</p>
+                                <ResponsiveContainer width="100%" height={140}>
+                                    <LineChart data={history}>
+                                        <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
+                                        <YAxis domain={['dataMin - 1', 'dataMax + 1']} tick={{ fontSize: 10, fill: '#64748b' }} width={35} />
+                                        <Tooltip {...chartTooltipStyle} formatter={(v) => [`${Number(v).toFixed(1)}°F`, 'Water Temp']} />
+                                        <Line type="monotone" dataKey="water_temp_f" stroke="#f97316" strokeWidth={2} dot={false} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            {/* Outflow Chart */}
+                            <div>
+                                <p className="text-xs font-medium text-slate-400 mb-2">Dam Outflow (cfs)</p>
+                                <ResponsiveContainer width="100%" height={140}>
+                                    <AreaChart data={history}>
+                                        <defs>
+                                            <linearGradient id="outflowGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
+                                        <YAxis tick={{ fontSize: 10, fill: '#64748b' }} width={45} />
+                                        <Tooltip {...chartTooltipStyle} formatter={(v) => [`${v} cfs`, 'Outflow']} />
+                                        <Area type="monotone" dataKey="outflow_cfs" stroke="#3b82f6" fill="url(#outflowGrad)" strokeWidth={2} dot={false} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Elevation Chart */}
-                    <div className="mb-6">
-                        <p className="text-xs font-medium text-slate-400 mb-2">Pool Elevation (ft)</p>
-                        <ResponsiveContainer width="100%" height={160}>
-                            <AreaChart data={history}>
-                                <defs>
-                                    <linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.3} />
-                                        <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
-                                <YAxis domain={['dataMin - 0.1', 'dataMax + 0.1']} tick={{ fontSize: 10, fill: '#64748b' }} width={55} />
-                                <Tooltip {...chartTooltipStyle} formatter={(v) => [`${Number(v).toFixed(2)} ft`, 'Elevation']} />
-                                <Area type="monotone" dataKey="elevation" stroke="#06b6d4" fill="url(#elevGrad)" strokeWidth={2} dot={false} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    {/* Water Temp Chart */}
-                    <div className="mb-6">
-                        <p className="text-xs font-medium text-slate-400 mb-2">Water Temperature (°F)</p>
-                        <ResponsiveContainer width="100%" height={140}>
-                            <LineChart data={history}>
-                                <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
-                                <YAxis domain={['dataMin - 1', 'dataMax + 1']} tick={{ fontSize: 10, fill: '#64748b' }} width={35} />
-                                <Tooltip {...chartTooltipStyle} formatter={(v) => [`${Number(v).toFixed(1)}°F`, 'Water Temp']} />
-                                <Line type="monotone" dataKey="water_temp_f" stroke="#f97316" strokeWidth={2} dot={false} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    {/* Outflow Chart */}
-                    <div>
-                        <p className="text-xs font-medium text-slate-400 mb-2">Dam Outflow (cfs)</p>
-                        <ResponsiveContainer width="100%" height={140}>
-                            <AreaChart data={history}>
-                                <defs>
-                                    <linearGradient id="outflowGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
-                                <YAxis tick={{ fontSize: 10, fill: '#64748b' }} width={45} />
-                                <Tooltip {...chartTooltipStyle} formatter={(v) => [`${v} cfs`, 'Outflow']} />
-                                <Area type="monotone" dataKey="outflow_cfs" stroke="#3b82f6" fill="url(#outflowGrad)" strokeWidth={2} dot={false} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
+                    )}
                 </div>
             )}
 
