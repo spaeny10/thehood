@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getEvents, getAllEvents, createEvent, deleteEvent } = require('../controllers/eventsController');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/authMiddleware');
 
 // Public: get upcoming events
 router.get('/', getEvents);
