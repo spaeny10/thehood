@@ -150,90 +150,92 @@ async function initializeDatabase() {
       )
     `);
 
-    // Always reseed lots with correct data from court map document
-    await client.query('DELETE FROM lots');
-    const lotsData = [
-      // ═══ SOUTH GRID — Row 8 (bottom, near 29th Road) ═══
-      [1, 'Scotch St', 'Bickel', 'Sharoll', 'occupied', ''],
-      [2, 'Scotch St', 'Plankenhorn', 'Mike, Velda', 'occupied', ''],
-      [3, 'Vodka St', 'Beetch', 'Kevin, Karen', 'occupied', ''],
-      [4, 'Vodka St', 'Toews', 'John, Sharon', 'occupied', ''],
-      [5, 'Bourbon St', 'Toews', 'Shane, Crystal', 'occupied', ''],
-      // ═══ Row 7 ═══
-      [6, 'Scotch St', 'Schneider', 'Joe, Cassie', 'occupied', ''],
-      [7, 'Scotch St', 'Stum', 'Marc, Bev', 'occupied', ''],
-      [8, 'Vodka St', 'Smith', 'Tim, Karen', 'occupied', ''],
-      [9, 'Vodka St', 'Richards', 'Ken, Connie', 'occupied', ''],
-      [10, 'Bourbon St', 'Koeppen', 'Don', 'occupied', ''],
-      // ═══ Row 6 ═══
-      [11, 'Scotch St', 'Munnz', 'Aaron, Liz', 'occupied', ''],
-      [12, 'Scotch St', 'Wojteczko', 'Jason, Crystal', 'occupied', ''],
-      [13, 'Vodka St', 'Edger', 'Thayne, Jessica', 'occupied', ''],
-      [14, 'Vodka St', 'Nelson', 'Delisa', 'occupied', ''],
-      [15, 'Bourbon St', 'Andrea', '', 'occupied', ''],
-      // ═══ Row 5 ═══
-      [16, 'Scotch St', 'McFadden', 'Mike', 'occupied', ''],
-      [17, 'Scotch St', 'McFadden', 'Mike', 'occupied', ''],
-      [18, 'Vodka St', 'Ehart', 'Jeremy, Kristy', 'occupied', ''],
-      [19, 'Vodka St', 'Shaw', 'Mike, Patti', 'occupied', ''],
-      [20, 'Bourbon St', 'Livingston', 'John, Rachel', 'occupied', ''],
-      // ═══ Row 4 ═══
-      [21, 'Scotch St', 'Lassiter / Kralik', 'Shawn / Michelle', 'occupied', ''],
-      [22, 'Scotch St', 'Mosier', 'Matt, Deanna', 'occupied', ''],
-      [23, 'Vodka St', 'Waugh', 'Keith, Caroline', 'occupied', ''],
-      [24, 'Vodka St', 'VanWinkle', 'James', 'occupied', ''],
-      [25, 'Bourbon St', 'Witter', 'Tanya', 'occupied', ''],
-      // ═══ Row 3 ═══
-      [26, 'Scotch St', 'Mossberg', 'Lori', 'occupied', ''],
-      [27, 'Scotch St', 'Alberici', 'Mario, Jodi', 'occupied', ''],
-      [28, 'Vodka St', 'Engelland', 'Ed, Melissa', 'occupied', ''],
-      [29, 'Vodka St', 'Pickering', 'Quinton, Jessica', 'for_sale', ''],
-      [30, 'Bourbon St', 'Kenyon', 'Rick, Marty', 'for_sale', ''],
-      // ═══ Row 2 ═══
-      [31, 'Scotch St', 'Moore', 'Mary Jane', 'for_sale', ''],
-      [32, 'Scotch St', 'Gabel', 'Mark', 'occupied', ''],
-      [33, 'Vodka St', 'Miller', 'Chuck, Dawn', 'occupied', ''],
-      [34, 'Vodka St', 'Oberle', 'Larry', 'occupied', ''],
-      [35, 'Bourbon St', 'Tolle', 'Dan', 'occupied', ''],
-      // ═══ Row 1 (top, near Railroad Ave) ═══
-      [36, 'Scotch St', 'Ryan', 'Mike', 'occupied', ''],
-      [37, 'Scotch St', 'Robben', 'Mike, Sandy', 'occupied', ''],
-      [38, 'Vodka St', 'Spaeny', 'Mike, Twila', 'occupied', ''],
-      [39, 'Vodka St', 'Neisler', 'Amy', 'occupied', ''],
-      [40, 'Bourbon St', 'Schmitt', 'Robert, Sarah', 'occupied', ''],
-      // ═══ NORTH GRID — Coors Court (top to bottom: 46→41) ═══
-      [41, 'Coors Court', 'Spaeny', 'Shawn, Jennifer', 'occupied', ''],
-      [42, 'Coors Court', 'Diggs', 'Jody', 'occupied', ''],
-      [43, 'Coors Court', 'Buellenbrach', 'Trapper, Leslie', 'occupied', ''],
-      [44, 'Coors Court', 'Scott', 'Greg', 'occupied', ''],
-      [45, 'Coors Court', 'Babcock', 'Troy, Kevin', 'occupied', ''],
-      [46, 'Coors Court', 'Swan', 'Brad, Sam', 'occupied', ''],
-      // ═══ Center lots (top to bottom: 52→47) ═══
-      [47, 'Railroad Ave', 'Shaft', 'Brad, Candra', 'occupied', ''],
-      [48, 'Railroad Ave', 'Holzman', 'Brian', 'occupied', ''],
-      [49, 'Railroad Ave', 'Steenson', 'Brad, Rachael', 'occupied', ''],
-      [50, 'Railroad Ave', '', '', 'for_sale', ''],
-      [51, 'Railroad Ave', 'Wells', 'May', 'occupied', ''],
-      [52, 'Railroad Ave', 'Unruh', 'Tim, Kim', 'occupied', ''],
-      // ═══ Budweiser Blvd (top to bottom: 58→53) ═══
-      [53, 'Budweiser Blvd', 'Roger', 'Lisa', 'occupied', ''],
-      [54, 'Budweiser Blvd', 'Ward', '', 'occupied', ''],
-      [55, 'Budweiser Blvd', 'Pennington', 'Donnie', 'occupied', ''],
-      [56, 'Budweiser Blvd', 'Sampson', 'Eric', 'occupied', ''],
-      [57, 'Budweiser Blvd', 'Dorin', '', 'occupied', ''],
-      [58, 'Budweiser Blvd', 'Holm', 'Trae, Lindsey', 'occupied', ''],
-      // ═══ Keystone Court (left to right: 63→59) ═══
-      [59, 'Keystone Court', 'Fenstermaker', 'Larry, Bonnie', 'occupied', ''],
-      [60, 'Keystone Court', 'Engel', 'Troy, Leslie', 'occupied', ''],
-      [61, 'Keystone Court', 'Anderson', 'Bryan, Tina', 'occupied', ''],
-      [62, 'Keystone Court', 'Anderson', 'Ryan, Tina', 'occupied', ''],
-      [63, 'Keystone Court', 'Morris', 'Carol', 'occupied', ''],
-    ];
-    for (const [lot_number, street, owner_name, owner_name2, status, notes] of lotsData) {
-      await client.query(
-        `INSERT INTO lots (lot_number, street, owner_name, owner_name2, status, notes) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (lot_number) DO NOTHING`,
-        [lot_number, street, owner_name, owner_name2, status, notes]
-      );
+    // Seed lots if missing (data from original court map document)
+    const lotCount = await client.query('SELECT COUNT(*) as count FROM lots');
+    if (parseInt(lotCount.rows[0].count) < 63) {
+      const lotsData = [
+        // ═══ SOUTH GRID — Row 8 (bottom, near 29th Road) ═══
+        [1, 'Scotch St', 'Bickel', 'Sharoll', 'occupied', ''],
+        [2, 'Scotch St', 'Plankenhorn', 'Mike, Velda', 'occupied', ''],
+        [3, 'Vodka St', 'Beetch', 'Kevin, Karen', 'occupied', ''],
+        [4, 'Vodka St', 'Toews', 'John, Sharon', 'occupied', ''],
+        [5, 'Bourbon St', 'Toews', 'Shane, Crystal', 'occupied', ''],
+        // ═══ Row 7 ═══
+        [6, 'Scotch St', 'Schneider', 'Joe, Cassie', 'occupied', ''],
+        [7, 'Scotch St', 'Stum', 'Marc, Bev', 'occupied', ''],
+        [8, 'Vodka St', 'Smith', 'Tim, Karen', 'occupied', ''],
+        [9, 'Vodka St', 'Richards', 'Ken, Connie', 'occupied', ''],
+        [10, 'Bourbon St', 'Koeppen', 'Don', 'occupied', ''],
+        // ═══ Row 6 ═══
+        [11, 'Scotch St', 'Munnz', 'Aaron, Liz', 'occupied', ''],
+        [12, 'Scotch St', 'Wojteczko', 'Jason, Crystal', 'occupied', ''],
+        [13, 'Vodka St', 'Edger', 'Thayne, Jessica', 'occupied', ''],
+        [14, 'Vodka St', 'Nelson', 'Delisa', 'occupied', ''],
+        [15, 'Bourbon St', 'Andrea', '', 'occupied', ''],
+        // ═══ Row 5 ═══
+        [16, 'Scotch St', 'McFadden', 'Mike', 'occupied', ''],
+        [17, 'Scotch St', 'McFadden', 'Mike', 'occupied', ''],
+        [18, 'Vodka St', 'Ehart', 'Jeremy, Kristy', 'occupied', ''],
+        [19, 'Vodka St', 'Shaw', 'Mike, Patti', 'occupied', ''],
+        [20, 'Bourbon St', 'Livingston', 'John, Rachel', 'occupied', ''],
+        // ═══ Row 4 ═══
+        [21, 'Scotch St', 'Lassiter / Kralik', 'Shawn / Michelle', 'occupied', ''],
+        [22, 'Scotch St', 'Mosier', 'Matt, Deanna', 'occupied', ''],
+        [23, 'Vodka St', 'Waugh', 'Keith, Caroline', 'occupied', ''],
+        [24, 'Vodka St', 'VanWinkle', 'James', 'occupied', ''],
+        [25, 'Bourbon St', 'Witter', 'Tanya', 'occupied', ''],
+        // ═══ Row 3 ═══
+        [26, 'Scotch St', 'Mossberg', 'Lori', 'occupied', ''],
+        [27, 'Scotch St', 'Alberici', 'Mario, Jodi', 'occupied', ''],
+        [28, 'Vodka St', 'Engelland', 'Ed, Melissa', 'occupied', ''],
+        [29, 'Vodka St', 'Pickering', 'Quinton, Jessica', 'for_sale', ''],
+        [30, 'Bourbon St', 'Kenyon', 'Rick, Marty', 'for_sale', ''],
+        // ═══ Row 2 ═══
+        [31, 'Scotch St', 'Moore', 'Mary Jane', 'for_sale', ''],
+        [32, 'Scotch St', 'Gabel', 'Mark', 'occupied', ''],
+        [33, 'Vodka St', 'Miller', 'Chuck, Dawn', 'occupied', ''],
+        [34, 'Vodka St', 'Oberle', 'Larry', 'occupied', ''],
+        [35, 'Bourbon St', 'Tolle', 'Dan', 'occupied', ''],
+        // ═══ Row 1 (top, near Railroad Ave) ═══
+        [36, 'Scotch St', 'Ryan', 'Mike', 'occupied', ''],
+        [37, 'Scotch St', 'Robben', 'Mike, Sandy', 'occupied', ''],
+        [38, 'Vodka St', 'Spaeny', 'Mike, Twila', 'occupied', ''],
+        [39, 'Vodka St', 'Neisler', 'Amy', 'occupied', ''],
+        [40, 'Bourbon St', 'Schmitt', 'Robert, Sarah', 'occupied', ''],
+        // ═══ NORTH GRID — Coors Court (top to bottom: 46→41) ═══
+        [41, 'Coors Court', 'Spaeny', 'Shawn, Jennifer', 'occupied', ''],
+        [42, 'Coors Court', 'Diggs', 'Jody', 'occupied', ''],
+        [43, 'Coors Court', 'Buellenbrach', 'Trapper, Leslie', 'occupied', ''],
+        [44, 'Coors Court', 'Scott', 'Greg', 'occupied', ''],
+        [45, 'Coors Court', 'Babcock', 'Troy, Kevin', 'occupied', ''],
+        [46, 'Coors Court', 'Swan', 'Brad, Sam', 'occupied', ''],
+        // ═══ Center lots (top to bottom: 52→47) ═══
+        [47, 'Railroad Ave', 'Shaft', 'Brad, Candra', 'occupied', ''],
+        [48, 'Railroad Ave', 'Holzman', 'Brian', 'occupied', ''],
+        [49, 'Railroad Ave', 'Steenson', 'Brad, Rachael', 'occupied', ''],
+        [50, 'Railroad Ave', '', '', 'for_sale', ''],
+        [51, 'Railroad Ave', 'Wells', 'May', 'occupied', ''],
+        [52, 'Railroad Ave', 'Unruh', 'Tim, Kim', 'occupied', ''],
+        // ═══ Budweiser Blvd (top to bottom: 58→53) ═══
+        [53, 'Budweiser Blvd', 'Roger', 'Lisa', 'occupied', ''],
+        [54, 'Budweiser Blvd', 'Ward', '', 'occupied', ''],
+        [55, 'Budweiser Blvd', 'Pennington', 'Donnie', 'occupied', ''],
+        [56, 'Budweiser Blvd', 'Sampson', 'Eric', 'occupied', ''],
+        [57, 'Budweiser Blvd', 'Dorin', '', 'occupied', ''],
+        [58, 'Budweiser Blvd', 'Holm', 'Trae, Lindsey', 'occupied', ''],
+        // ═══ Keystone Court (left to right: 63→59) ═══
+        [59, 'Keystone Court', 'Fenstermaker', 'Larry, Bonnie', 'occupied', ''],
+        [60, 'Keystone Court', 'Engel', 'Troy, Leslie', 'occupied', ''],
+        [61, 'Keystone Court', 'Anderson', 'Bryan, Tina', 'occupied', ''],
+        [62, 'Keystone Court', 'Anderson', 'Ryan, Tina', 'occupied', ''],
+        [63, 'Keystone Court', 'Morris', 'Carol', 'occupied', ''],
+      ];
+      for (const [lot_number, street, owner_name, owner_name2, status, notes] of lotsData) {
+        await client.query(
+          `INSERT INTO lots (lot_number, street, owner_name, owner_name2, status, notes) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (lot_number) DO NOTHING`,
+          [lot_number, street, owner_name, owner_name2, status, notes]
+        );
+      }
     }
 
     await client.query(`
