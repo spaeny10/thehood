@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cloud, RefreshCw, Settings, Map, MessageCircle, LogIn, X, UserPlus, Menu } from 'lucide-react';
+import { Cloud, RefreshCw, Settings, Map, MessageCircle, LogIn, X, UserPlus, Menu, ChevronDown, TrendingUp } from 'lucide-react';
 import { CurrentWeather } from './components/WeatherCard';
 import WeatherChart from './components/WeatherChart';
 import AlertsPanel from './components/AlertsPanel';
@@ -25,6 +25,8 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [trendRange, setTrendRange] = useState(24);
+  const [weatherTrendsOpen, setWeatherTrendsOpen] = useState(false);
 
   useEffect(() => {
     fetchWeatherData();
@@ -32,13 +34,26 @@ function AppContent() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    fetchHistoricalData();
+  }, [trendRange]);
+
+  const fetchHistoricalData = async () => {
+    try {
+      const limit = trendRange <= 24 ? 100 : trendRange <= 168 ? 500 : 2000;
+      const res = await weatherApi.getHistorical(trendRange, limit);
+      setHistoricalData(res.data);
+    } catch (err) {
+      console.error('Error fetching historical weather:', err);
+    }
+  };
+
   const fetchWeatherData = async () => {
     try {
       setLoading(true);
 
-      const [currentResponse, historicalResponse, forecastResponse, lakeResponse] = await Promise.all([
+      const [currentResponse, forecastResponse, lakeResponse] = await Promise.all([
         weatherApi.getCurrent(),
-        weatherApi.getHistorical(24, 100),
         forecastApi.get().catch(err => {
           console.error('Error fetching forecast:', err);
           return null;
@@ -50,7 +65,6 @@ function AppContent() {
       ]);
 
       setCurrentWeather(currentResponse.data);
-      setHistoricalData(historicalResponse.data);
       if (forecastResponse) setForecast(forecastResponse.data);
       if (lakeResponse) setLakeData(lakeResponse.data);
       setLastUpdate(new Date());
@@ -322,42 +336,71 @@ function AppContent() {
 
           {/* Historical Charts */}
           <section>
-            <h2 className="text-lg font-bold text-white mb-4">24-Hour Trends</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <WeatherChart
-                data={historicalData}
-                dataKeys={[
-                  { key: 'outdoor_temp', name: 'Outdoor', color: '#f59e0b' },
-                ]}
-                title="Temperature"
-                yAxisLabel="°F"
-              />
-              <WeatherChart
-                data={historicalData}
-                dataKeys={[
-                  { key: 'outdoor_humidity', name: 'Outdoor', color: '#06b6d4' },
-                  { key: 'indoor_humidity', name: 'Indoor', color: '#67e8f9' },
-                ]}
-                title="Humidity"
-                yAxisLabel="%"
-              />
-              <WeatherChart
-                data={historicalData}
-                dataKeys={[
-                  { key: 'wind_speed', name: 'Speed', color: '#a78bfa' },
-                  { key: 'wind_gust', name: 'Gusts', color: '#c4b5fd' },
-                ]}
-                title="Wind"
-                yAxisLabel="mph"
-              />
-              <WeatherChart
-                data={historicalData}
-                dataKeys={[
-                  { key: 'rain_hourly', name: 'Hourly', color: '#38bdf8' },
-                ]}
-                title="Rainfall"
-                yAxisLabel="inches"
-              />
+            <div className="card">
+              <button onClick={() => setWeatherTrendsOpen(!weatherTrendsOpen)} className="flex items-center justify-between w-full cursor-pointer" style={{ background: 'none', border: 'none', padding: 0 }}>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-purple-400" />
+                  <h2 className="text-lg font-bold text-white">Weather Trends</h2>
+                </div>
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${weatherTrendsOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {weatherTrendsOpen && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-end gap-1 mb-4">
+                    {[
+                      { label: '24h', hours: 24 },
+                      { label: '3d', hours: 72 },
+                      { label: '7d', hours: 168 },
+                      { label: '30d', hours: 720 },
+                      { label: '3mo', hours: 2160 },
+                    ].map(opt => (
+                      <button key={opt.hours} onClick={() => setTrendRange(opt.hours)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${trendRange === opt.hours
+                          ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                          : 'text-slate-500 hover:text-slate-300'
+                          }`}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <WeatherChart
+                      data={historicalData}
+                      dataKeys={[
+                        { key: 'outdoor_temp', name: 'Outdoor', color: '#f59e0b' },
+                      ]}
+                      title="Temperature"
+                      yAxisLabel="°F"
+                    />
+                    <WeatherChart
+                      data={historicalData}
+                      dataKeys={[
+                        { key: 'outdoor_humidity', name: 'Outdoor', color: '#06b6d4' },
+                        { key: 'indoor_humidity', name: 'Indoor', color: '#67e8f9' },
+                      ]}
+                      title="Humidity"
+                      yAxisLabel="%"
+                    />
+                    <WeatherChart
+                      data={historicalData}
+                      dataKeys={[
+                        { key: 'wind_speed', name: 'Speed', color: '#a78bfa' },
+                        { key: 'wind_gust', name: 'Gusts', color: '#c4b5fd' },
+                      ]}
+                      title="Wind"
+                      yAxisLabel="mph"
+                    />
+                    <WeatherChart
+                      data={historicalData}
+                      dataKeys={[
+                        { key: 'rain_hourly', name: 'Hourly', color: '#38bdf8' },
+                      ]}
+                      title="Rainfall"
+                      yAxisLabel="inches"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 
