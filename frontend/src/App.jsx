@@ -287,7 +287,7 @@ function AppContent() {
 
           {/* Current Weather + Forecast */}
           <section>
-            <h2 className="text-lg font-bold text-white mb-4">Current Conditions</h2>
+            <h2 className="text-lg font-bold text-white mb-4">Current Conditions on Shawn & Jenn's Porch</h2>
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1 min-w-0">
                 {loading && !currentWeather ? (
