@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Search, ArrowLeft } from 'lucide-react';
+import { X, Save, Search, ArrowLeft, LogIn } from 'lucide-react';
 import { lotsApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const CourtMap = ({ onNavigate }) => {
   const [lots, setLots] = useState([]);
@@ -9,6 +10,8 @@ const CourtMap = ({ onNavigate }) => {
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [loginPrompt, setLoginPrompt] = useState(false);
+  const { isLoggedIn } = useAuth();
 
   useEffect(() => { loadLots(); }, []);
 
@@ -24,6 +27,11 @@ const CourtMap = ({ onNavigate }) => {
   const getLot = (num) => lots.find(l => l.lot_number === num);
 
   const openEdit = (lot) => {
+    if (!isLoggedIn) {
+      setLoginPrompt(true);
+      setTimeout(() => setLoginPrompt(false), 3000);
+      return;
+    }
     setEditForm({ owner_name: lot.owner_name, owner_name2: lot.owner_name2, status: lot.status, notes: lot.notes });
     setEditingLot(lot);
   };
@@ -94,6 +102,13 @@ const CourtMap = ({ onNavigate }) => {
 
   return (
     <div className="min-h-screen bg-dark-bg">
+      {/* Login prompt toast */}
+      {loginPrompt && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-xl bg-amber-500/20 border border-amber-500/30 text-amber-400">
+          <LogIn className="w-4 h-4" />
+          Sign in to edit lots
+        </div>
+      )}
       {/* Header */}
       <header className="border-b border-dark-border/50 bg-dark-bg sticky top-0 z-10 backdrop-blur-sm">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-3 sm:py-4">
