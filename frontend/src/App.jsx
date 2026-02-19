@@ -9,10 +9,9 @@ import AdminPage from './components/AdminPage';
 import CourtMap from './components/CourtMap';
 import DiscussPage from './components/DiscussPage';
 import NWSAlertBanner from './components/NWSAlertBanner';
-import SunMoonCard from './components/SunMoonCard';
 import EventCalendar from './components/EventCalendar';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { weatherApi, forecastApi, lakeApi } from './services/api';
+import { weatherApi, forecastApi, lakeApi, communityApi } from './services/api';
 
 function AppContent() {
   const [page, setPage] = useState('dashboard');
@@ -30,12 +29,23 @@ function AppContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [trendRange, setTrendRange] = useState(24);
   const [weatherTrendsOpen, setWeatherTrendsOpen] = useState(false);
+  const [sunMoonData, setSunMoonData] = useState(null);
 
   useEffect(() => {
     fetchWeatherData();
+    fetchSunMoon();
     const interval = setInterval(fetchWeatherData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchSunMoon = async () => {
+    try {
+      const res = await communityApi.getSunMoon();
+      setSunMoonData(res.data);
+    } catch (err) {
+      console.error('Error loading sun/moon:', err);
+    }
+  };
 
   useEffect(() => {
     fetchHistoricalData();
@@ -338,9 +348,8 @@ function AppContent() {
                     <p className="text-slate-400">Loading weather data...</p>
                   </div>
                 ) : (
-                  <CurrentWeather data={currentWeather} />
+                  <CurrentWeather data={currentWeather} sunMoonData={sunMoonData} />
                 )}
-                <SunMoonCard />
               </div>
               <div className="w-full lg:w-[380px] shrink-0">
                 <ForecastPanel forecast={forecast} />
