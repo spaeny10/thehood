@@ -340,16 +340,12 @@ function AppContent() {
                 ) : (
                   <CurrentWeather data={currentWeather} />
                 )}
+                <SunMoonCard />
               </div>
               <div className="w-full lg:w-[380px] shrink-0">
                 <ForecastPanel forecast={forecast} />
               </div>
             </div>
-          </section>
-
-          {/* Sun/Moon Card */}
-          <section>
-            <SunMoonCard />
           </section>
 
           {/* Weather Radar */}
