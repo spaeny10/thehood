@@ -152,22 +152,83 @@ async function initializeDatabase() {
 
     // Seed lots if empty
     const lotCount = await client.query('SELECT COUNT(*) as count FROM lots');
-    if (parseInt(lotCount.rows[0].count) === 0) {
+    if (parseInt(lotCount.rows[0].count) < 63) {
       const lotsData = [
-        [1, 'Lakeview Ct', 'Spaeny', 'Matt, Treva', 'occupied', ''],
-        [2, 'Lakeview Ct', 'Pickering', 'Quinton, Jessica', 'for_sale', ''],
-        [3, 'Lakeview Ct', 'Shafer', 'Jeff, Tammy', 'occupied', ''],
-        [4, 'Lakeview Ct', 'Van Winkle', 'James', 'occupied', ''],
-        [5, 'Lakeview Ct', 'Cook', 'Dan', 'occupied', ''],
-        [6, 'Lakeview Ct', 'West', 'Don', 'occupied', ''],
-        [7, 'Lake Canyon', 'Rick', 'Marty', 'for_sale', ''],
-        [8, 'Lake Canyon', 'Crystal', '', 'occupied', ''],
-        [9, 'Lake Canyon', 'Roger', '', 'occupied', ''],
-        [10, 'Lake Canyon', 'Cully', '', 'vacant', ''],
-        [11, 'Lake Canyon', 'Nathan', '', 'occupied', ''],
-        [12, 'Lake Canyon', 'Andrea', '', 'occupied', ''],
-        [13, 'Lake Canyon', 'Livingston', 'John, Rachel', 'occupied', ''],
-        [14, 'Lake Canyon', 'Fisher', 'John, Sharon', 'occupied', ''],
+        // South grid — Row 8 (bottom): lots 1-5
+        [1, 'Bourbon St', 'Spaeny', 'Matt, Treva', 'occupied', ''],
+        [2, 'Vodka St', 'Pickering', 'Quinton, Jessica', 'for_sale', ''],
+        [3, 'Vodka St', 'Shafer', 'Jeff, Tammy', 'occupied', ''],
+        [4, 'Scotch St', 'Van Winkle', 'James', 'occupied', ''],
+        [5, 'Scotch St', 'Cook', 'Dan', 'occupied', ''],
+        // South grid — Row 7: lots 6-10
+        [6, 'Bourbon St', 'West', 'Don', 'occupied', ''],
+        [7, 'Vodka St', 'Rick', 'Marty', 'for_sale', ''],
+        [8, 'Vodka St', 'Crystal', '', 'occupied', ''],
+        [9, 'Scotch St', 'Roger', '', 'occupied', ''],
+        [10, 'Scotch St', 'Cully', '', 'vacant', ''],
+        // South grid — Row 6: lots 11-15
+        [11, 'Bourbon St', 'Nathan', '', 'occupied', ''],
+        [12, 'Vodka St', 'Andrea', '', 'occupied', ''],
+        [13, 'Vodka St', 'Livingston', 'John, Rachel', 'occupied', ''],
+        [14, 'Scotch St', 'Fisher', 'John, Sharon', 'occupied', ''],
+        [15, 'Scotch St', '', '', 'vacant', ''],
+        // South grid — Row 5: lots 16-20
+        [16, 'Bourbon St', '', '', 'vacant', ''],
+        [17, 'Vodka St', '', '', 'vacant', ''],
+        [18, 'Vodka St', '', '', 'vacant', ''],
+        [19, 'Scotch St', '', '', 'vacant', ''],
+        [20, 'Scotch St', '', '', 'vacant', ''],
+        // South grid — Row 4: lots 21-25
+        [21, 'Bourbon St', '', '', 'vacant', ''],
+        [22, 'Vodka St', '', '', 'vacant', ''],
+        [23, 'Vodka St', '', '', 'vacant', ''],
+        [24, 'Scotch St', '', '', 'vacant', ''],
+        [25, 'Scotch St', '', '', 'vacant', ''],
+        // South grid — Row 3: lots 26-30
+        [26, 'Bourbon St', '', '', 'vacant', ''],
+        [27, 'Vodka St', '', '', 'vacant', ''],
+        [28, 'Vodka St', '', '', 'vacant', ''],
+        [29, 'Scotch St', '', '', 'vacant', ''],
+        [30, 'Scotch St', '', '', 'vacant', ''],
+        // South grid — Row 2: lots 31-35
+        [31, 'Bourbon St', '', '', 'vacant', ''],
+        [32, 'Vodka St', '', '', 'vacant', ''],
+        [33, 'Vodka St', '', '', 'vacant', ''],
+        [34, 'Scotch St', '', '', 'vacant', ''],
+        [35, 'Scotch St', '', '', 'vacant', ''],
+        // South grid — Row 1 (top): lots 36-40
+        [36, 'Bourbon St', '', '', 'vacant', ''],
+        [37, 'Vodka St', '', '', 'vacant', ''],
+        [38, 'Vodka St', '', '', 'vacant', ''],
+        [39, 'Scotch St', '', '', 'vacant', ''],
+        [40, 'Scotch St', '', '', 'vacant', ''],
+        // North grid — Coors Court: lots 41-46
+        [41, 'Coors Court', '', '', 'vacant', ''],
+        [42, 'Coors Court', '', '', 'vacant', ''],
+        [43, 'Coors Court', '', '', 'vacant', ''],
+        [44, 'Coors Court', '', '', 'vacant', ''],
+        [45, 'Coors Court', '', '', 'vacant', ''],
+        [46, 'Coors Court', '', '', 'vacant', ''],
+        // North grid — Center: lots 47-52
+        [47, 'Railroad Ave', '', '', 'vacant', ''],
+        [48, 'Railroad Ave', '', '', 'vacant', ''],
+        [49, 'Railroad Ave', '', '', 'vacant', ''],
+        [50, 'Railroad Ave', '', '', 'vacant', ''],
+        [51, 'Railroad Ave', '', '', 'vacant', ''],
+        [52, 'Railroad Ave', '', '', 'vacant', ''],
+        // North grid — Budweiser Blvd: lots 53-58
+        [53, 'Budweiser Blvd', '', '', 'vacant', ''],
+        [54, 'Budweiser Blvd', '', '', 'vacant', ''],
+        [55, 'Budweiser Blvd', '', '', 'vacant', ''],
+        [56, 'Budweiser Blvd', '', '', 'vacant', ''],
+        [57, 'Budweiser Blvd', '', '', 'vacant', ''],
+        [58, 'Budweiser Blvd', '', '', 'vacant', ''],
+        // Keystone Court: lots 59-63
+        [59, 'Keystone Court', '', '', 'vacant', ''],
+        [60, 'Keystone Court', '', '', 'vacant', ''],
+        [61, 'Keystone Court', '', '', 'vacant', ''],
+        [62, 'Keystone Court', '', '', 'vacant', ''],
+        [63, 'Keystone Court', '', '', 'vacant', ''],
       ];
       for (const [lot_number, street, owner_name, owner_name2, status, notes] of lotsData) {
         await client.query(
