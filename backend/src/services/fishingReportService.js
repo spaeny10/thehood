@@ -4,7 +4,7 @@ class FishingReportService {
     constructor() {
         this.cache = null;
         this.cacheExpiry = 0;
-        this.cacheDuration = 6 * 60 * 60 * 1000; // 6 hours
+        this.cacheDuration = 24 * 60 * 60 * 1000; // 24 hours
         this.url = 'https://ksoutdoors.gov/Fishing/Where-to-Fish-in-Kansas/Fishing-Locations-Public-Waters/Fishing-in-Northwest-Kansas/Kanopolis-Reservoir/Kanopolis-Reservoir-Fishing-Report';
     }
 
