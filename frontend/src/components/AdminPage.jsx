@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
     Settings, Clock, Database, MapPin, Waves, Trash2, Save,
-    ArrowLeft, RefreshCw, AlertTriangle, CheckCircle, HardDrive
+    ArrowLeft, RefreshCw, AlertTriangle, CheckCircle, HardDrive,
+    Thermometer, Droplets, BatteryFull, BatteryLow
 } from 'lucide-react';
 import { settingsApi } from '../services/api';
+import AlertsPanel from './AlertsPanel';
+import { formatTemp, formatHumidity } from '../utils/formatters';
 
-const AdminPage = ({ onBack, onNavigate }) => {
+const AdminPage = ({ onBack, onNavigate, currentWeather }) => {
     const [settings, setSettings] = useState(null);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -133,6 +136,54 @@ const AdminPage = ({ onBack, onNavigate }) => {
             </header>
 
             <main className="max-w-[1000px] mx-auto px-6 py-6 space-y-6">
+
+                {/* Indoor Monitoring */}
+                <SettingsSection
+                    icon={<Thermometer className="w-5 h-5 text-purple-400" />}
+                    title="Indoor Monitoring"
+                    description="Real-time indoor sensor readings from your weather station"
+                >
+                    {currentWeather ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="p-4 rounded-xl bg-dark-bg border border-dark-border/50">
+                                <p className="text-xs text-slate-400 mb-1">Indoor Temperature</p>
+                                <p className="text-2xl font-bold text-white">{formatTemp(currentWeather.indoor_temp)}</p>
+                            </div>
+                            <div className="p-4 rounded-xl bg-dark-bg border border-dark-border/50">
+                                <p className="text-xs text-slate-400 mb-1">Indoor Humidity</p>
+                                <div className="flex items-end gap-2">
+                                    <p className="text-2xl font-bold text-white">{formatHumidity(currentWeather.indoor_humidity)}</p>
+                                </div>
+                                <div className="mt-2 w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                                    <div className="h-full rounded-full bg-cyan-400 transition-all duration-500" style={{ width: `${Math.min(currentWeather.indoor_humidity || 0, 100)}%` }} />
+                                </div>
+                            </div>
+                            <div className="p-4 rounded-xl bg-dark-bg border border-dark-border/50">
+                                <p className="text-xs text-slate-400 mb-1">Indoor Battery</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    {currentWeather.battery_indoor === 1
+                                        ? <BatteryLow className="w-6 h-6 text-red-400" />
+                                        : <BatteryFull className="w-6 h-6 text-emerald-400" />}
+                                    <span className={`text-sm font-semibold px-2 py-0.5 rounded-full ${currentWeather.battery_indoor === 1
+                                            ? 'bg-red-500/20 text-red-400'
+                                            : 'bg-emerald-500/20 text-emerald-400'
+                                        }`}>{currentWeather.battery_indoor === 1 ? 'LOW' : 'OK'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-slate-500">No indoor data available — waiting for weather station update.</p>
+                    )}
+                </SettingsSection>
+
+                {/* Alerts Configuration */}
+                <SettingsSection
+                    icon={<AlertTriangle className="w-5 h-5 text-yellow-400" />}
+                    title="Alert Configuration"
+                    description="Manage weather alerts and view alert history"
+                >
+                    <AlertsPanel />
+                </SettingsSection>
 
                 {/* Data Collection */}
                 <SettingsSection

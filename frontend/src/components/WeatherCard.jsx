@@ -55,10 +55,10 @@ const BatteryIndicator = ({ value, label }) => {
         <span className="text-sm text-slate-300">{label}</span>
       </div>
       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isUnknown
-          ? 'bg-slate-700 text-slate-400'
-          : isLow
-            ? 'bg-red-500/20 text-red-400'
-            : 'bg-emerald-500/20 text-emerald-400'
+        ? 'bg-slate-700 text-slate-400'
+        : isLow
+          ? 'bg-red-500/20 text-red-400'
+          : 'bg-emerald-500/20 text-emerald-400'
         }`}>
         {isUnknown ? 'N/A' : isLow ? 'LOW' : 'OK'}
       </span>
@@ -76,7 +76,7 @@ const CurrentWeather = ({ data }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {/* Outdoor Temperature */}
       <div className="card card-hover">
         <div className="flex items-start justify-between mb-4">
@@ -94,16 +94,6 @@ const CurrentWeather = ({ data }) => {
         </div>
       </div>
 
-      {/* Indoor Temperature */}
-      <div className="card card-hover">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <p className="text-sm text-slate-400 mb-1">Indoor</p>
-            <p className="text-4xl font-bold text-white">{formatTemp(data.indoor_temp)}</p>
-          </div>
-          <Thermometer className="w-8 h-8 text-purple-light" />
-        </div>
-      </div>
 
       {/* Humidity */}
       <div className="card card-hover">
@@ -119,11 +109,6 @@ const CurrentWeather = ({ data }) => {
             label="Outdoor"
             color="#06b6d4"
           />
-          <HumidityBar
-            value={data.indoor_humidity}
-            label="Indoor"
-            color="#67e8f9"
-          />
         </div>
       </div>
 
@@ -137,7 +122,6 @@ const CurrentWeather = ({ data }) => {
         </div>
         <div className="divide-y divide-dark-border">
           <BatteryIndicator value={data.battery_outdoor} label="Outdoor Sensor" />
-          <BatteryIndicator value={data.battery_indoor} label="Indoor Sensor" />
         </div>
       </div>
 

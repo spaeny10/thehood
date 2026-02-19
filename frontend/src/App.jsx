@@ -60,9 +60,21 @@ function AppContent() {
     }
   };
 
-  // Admin page
+  // Admin page (admin only)
   if (page === 'admin') {
-    return <AdminPage onBack={() => setPage('dashboard')} onNavigate={setPage} />;
+    if (!isAdmin) {
+      return (
+        <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+          <div className="card text-center max-w-sm">
+            <Settings className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+            <h2 className="text-lg font-bold text-white mb-2">Admin Access Required</h2>
+            <p className="text-sm text-slate-400 mb-4">You need to sign in with an admin account to access settings.</p>
+            <button onClick={() => setPage('dashboard')} className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded-xl text-amber-400 text-sm font-medium transition-all">Back to Dashboard</button>
+          </div>
+        </div>
+      );
+    }
+    return <AdminPage onBack={() => setPage('dashboard')} onNavigate={setPage} currentWeather={currentWeather} />;
   }
 
   // Court Map page
@@ -244,6 +256,22 @@ function AppContent() {
             </div>
           </section>
 
+          {/* Weather Radar */}
+          <section>
+            <h2 className="text-lg font-bold text-white mb-4">Weather Radar</h2>
+            <div className="card overflow-hidden" style={{ padding: 0 }}>
+              <iframe
+                src="https://www.rainviewer.com/map.html?loc=38.72,-98.77,8&oFa=0&oC=1&oU=0&oCS=1&oF=0&oAP=1&c=1&o=83&lm=1&layer=radar&sm=1&sn=1"
+                width="100%"
+                height="400"
+                frameBorder="0"
+                allowFullScreen
+                title="Weather Radar - Lake Kanopolis"
+                className="rounded-xl" style={{ minHeight: '300px' }}
+              />
+            </div>
+          </section>
+
           {/* Historical Charts */}
           <section>
             <h2 className="text-lg font-bold text-white mb-4">24-Hour Trends</h2>
@@ -252,7 +280,6 @@ function AppContent() {
                 data={historicalData}
                 dataKeys={[
                   { key: 'outdoor_temp', name: 'Outdoor', color: '#f59e0b' },
-                  { key: 'indoor_temp', name: 'Indoor', color: '#fbbf24' },
                 ]}
                 title="Temperature"
                 yAxisLabel="°F"
@@ -286,11 +313,7 @@ function AppContent() {
             </div>
           </section>
 
-          {/* Alerts */}
-          <section>
-            <h2 className="text-lg font-bold text-white mb-4">Alerts</h2>
-            <AlertsPanel />
-          </section>
+
         </div>
       </main>
 
@@ -318,12 +341,14 @@ function AppContent() {
               >
                 Discuss
               </button>
-              <button
-                onClick={() => setPage('admin')}
-                className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium"
-              >
-                Settings
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setPage('admin')}
+                  className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium"
+                >
+                  Settings
+                </button>
+              )}
             </nav>
             <p className="text-xs text-slate-600">
               Ambient Weather • USGS Water Data • Open-Meteo Forecast
