@@ -84,12 +84,6 @@ const CurrentWeather = ({ data, sunMoonData }) => {
           sublabel={data.lightning_distance ? `Last strike: ${data.lightning_distance} mi` : null}
           value={`${data.lightning_count || 0} strikes`}
         />
-        <ConditionRow
-          icon={battLow ? BatteryLow : BatteryFull}
-          iconColor={battUnknown ? '#64748b' : battLow ? '#f87171' : '#34d399'}
-          label="Outdoor Sensor"
-          value={battUnknown ? 'N/A' : battLow ? 'LOW' : 'OK'}
-        />
 
         {/* Sun/Moon inline rows */}
         {sunMoonData && (
@@ -107,7 +101,7 @@ const CurrentWeather = ({ data, sunMoonData }) => {
               sublabel={sunMoonData.day_length ? `Daylight: ${sunMoonData.day_length}` : null}
               value={sunMoonData.sunset ? new Date(sunMoonData.sunset).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '--'}
             />
-            <div className="flex items-center justify-between py-3">
+            <div className="flex items-center justify-between py-3 border-b border-dark-border/40">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-xl">
                   {sunMoonData.moon_emoji || '🌙'}
@@ -120,6 +114,12 @@ const CurrentWeather = ({ data, sunMoonData }) => {
             </div>
           </>
         )}
+        <ConditionRow
+          icon={battLow ? BatteryLow : BatteryFull}
+          iconColor={battUnknown ? '#64748b' : battLow ? '#f87171' : '#34d399'}
+          label="Outdoor Sensor"
+          value={battUnknown ? 'N/A' : battLow ? 'LOW' : 'OK'}
+        />
       </div>
 
       {/* Last updated */}
