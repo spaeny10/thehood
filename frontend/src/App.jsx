@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cloud, RefreshCw, Settings, Map, MessageCircle, LogIn, X, UserPlus } from 'lucide-react';
+import { Cloud, RefreshCw, Settings, Map, MessageCircle, LogIn, X, UserPlus, Menu } from 'lucide-react';
 import { CurrentWeather } from './components/WeatherCard';
 import WeatherChart from './components/WeatherChart';
 import AlertsPanel from './components/AlertsPanel';
@@ -24,6 +24,7 @@ function AppContent() {
   const [lakeData, setLakeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchWeatherData();
@@ -92,18 +93,21 @@ function AppContent() {
     <div className="min-h-screen bg-dark-bg">
       {/* Header */}
       <header className="border-b border-dark-border/50 bg-dark-bg sticky top-0 z-10 backdrop-blur-sm">
-        <div className="max-w-[1440px] mx-auto px-6 py-4">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                <Cloud className="w-6 h-6 text-amber-400" />
+            {/* Logo */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Cloud className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">Kanopolanes</h1>
-                <p className="text-xs text-slate-500">Personal Weather Dashboard</p>
+                <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">Kanopolanes</h1>
+                <p className="text-[10px] sm:text-xs text-slate-500 hidden sm:block">Personal Weather Dashboard</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+
+            {/* Desktop nav (hidden on mobile) */}
+            <div className="hidden md:flex items-center gap-3">
               {lastUpdate && (
                 <span className="text-xs text-slate-500">
                   {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -117,25 +121,13 @@ function AppContent() {
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
-              <button
-                onClick={() => setPage('map')}
-                className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors"
-                title="Court Map"
-              >
+              <button onClick={() => setPage('map')} className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors" title="Court Map">
                 <Map className="w-4.5 h-4.5 text-slate-400" />
               </button>
-              <button
-                onClick={() => setPage('discuss')}
-                className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors"
-                title="Discuss"
-              >
+              <button onClick={() => setPage('discuss')} className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors" title="Discuss">
                 <MessageCircle className="w-4.5 h-4.5 text-slate-400" />
               </button>
-              <button
-                onClick={() => setPage('admin')}
-                className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors"
-                title="Settings"
-              >
+              <button onClick={() => setPage('admin')} className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors" title="Settings">
                 <Settings className="w-4.5 h-4.5 text-slate-400" />
               </button>
               {isLoggedIn ? (
@@ -155,7 +147,63 @@ function AppContent() {
                 </button>
               )}
             </div>
+
+            {/* Mobile: refresh + hamburger */}
+            <div className="flex items-center gap-2 md:hidden">
+              <button
+                onClick={fetchWeatherData}
+                disabled={loading}
+                className="w-9 h-9 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 disabled:opacity-40 flex items-center justify-center transition-all"
+              >
+                <RefreshCw className={`w-4 h-4 text-amber-400 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="w-9 h-9 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5 text-slate-400" /> : <Menu className="w-5 h-5 text-slate-400" />}
+              </button>
+            </div>
           </div>
+
+          {/* Mobile dropdown menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-3 pt-3 border-t border-dark-border/50 space-y-2">
+              <button onClick={() => { setPage('map'); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-colors text-left">
+                <Map className="w-4 h-4 text-slate-400" /> <span className="text-sm text-slate-300">Court Map</span>
+              </button>
+              <button onClick={() => { setPage('discuss'); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-colors text-left">
+                <MessageCircle className="w-4 h-4 text-slate-400" /> <span className="text-sm text-slate-300">Discuss</span>
+              </button>
+              <button onClick={() => { setPage('admin'); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-colors text-left">
+                <Settings className="w-4 h-4 text-slate-400" /> <span className="text-sm text-slate-300">Settings</span>
+              </button>
+              {isLoggedIn ? (
+                <button onClick={() => { logout(); setMobileMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-colors text-left">
+                  {user.profile_pic ? (
+                    <img src={user.profile_pic} alt="" className="w-5 h-5 rounded-full" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400 text-[10px] font-bold">{user.name?.charAt(0)}</div>
+                  )}
+                  <span className="text-sm text-slate-300">Sign Out ({user.name})</span>
+                </button>
+              ) : (
+                <button onClick={() => { setShowAuthModal(true); setAuthError(''); setAuthMode('login'); setAuthForm({ username: '', password: '', name: '', email: '' }); setMobileMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-colors text-left">
+                  <LogIn className="w-4 h-4 text-amber-400" /> <span className="text-sm text-amber-400">Sign In</span>
+                </button>
+              )}
+              {lastUpdate && (
+                <div className="px-3 py-1 text-xs text-slate-500">
+                  Last updated: {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -229,7 +277,7 @@ function AppContent() {
       )}
 
       {/* Main Content */}
-      <main className="max-w-[1440px] mx-auto px-6 py-6">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="space-y-6">
 
           {/* Lake Conditions — Top Section */}
