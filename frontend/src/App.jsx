@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cloud, RefreshCw, Settings, Map, MessageCircle, LogIn, X, UserPlus, Menu, ChevronDown, TrendingUp } from 'lucide-react';
+import { Cloud, RefreshCw, Settings, Map, MessageCircle, LogIn, X, UserPlus, Menu, ChevronDown, TrendingUp, Calendar } from 'lucide-react';
 import { CurrentWeather } from './components/WeatherCard';
 import WeatherChart from './components/WeatherChart';
 import AlertsPanel from './components/AlertsPanel';
@@ -8,6 +8,9 @@ import LakePanel from './components/LakePanel';
 import AdminPage from './components/AdminPage';
 import CourtMap from './components/CourtMap';
 import DiscussPage from './components/DiscussPage';
+import NWSAlertBanner from './components/NWSAlertBanner';
+import SunMoonCard from './components/SunMoonCard';
+import EventCalendar from './components/EventCalendar';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { weatherApi, forecastApi, lakeApi } from './services/api';
 
@@ -102,6 +105,22 @@ function AppContent() {
     return <DiscussPage onNavigate={setPage} />;
   }
 
+  // Events page
+  if (page === 'events') {
+    return (
+      <div className="min-h-screen bg-dark-bg">
+        <header className="border-b border-dark-border/50 backdrop-blur-md bg-dark-bg/80 sticky top-0 z-30">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+            <button onClick={() => setPage('dashboard')} className="text-sm text-slate-400 hover:text-white transition-colors">← Dashboard</button>
+          </div>
+        </header>
+        <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6">
+          <EventCalendar />
+        </main>
+      </div>
+    );
+  }
+
   // Dashboard
   return (
     <div className="min-h-screen bg-dark-bg">
@@ -140,6 +159,9 @@ function AppContent() {
               </button>
               <button onClick={() => setPage('discuss')} className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors" title="Discuss">
                 <MessageCircle className="w-4.5 h-4.5 text-slate-400" />
+              </button>
+              <button onClick={() => setPage('events')} className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors" title="Events">
+                <Calendar className="w-4.5 h-4.5 text-slate-400" />
               </button>
               <button onClick={() => setPage('admin')} className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors" title="Settings">
                 <Settings className="w-4.5 h-4.5 text-slate-400" />
@@ -190,6 +212,10 @@ function AppContent() {
               <button onClick={() => { setPage('discuss'); setMobileMenuOpen(false); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-colors text-left">
                 <MessageCircle className="w-4 h-4 text-slate-400" /> <span className="text-sm text-slate-300">Discuss</span>
+              </button>
+              <button onClick={() => { setPage('events'); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-colors text-left">
+                <Calendar className="w-4 h-4 text-slate-400" /> <span className="text-sm text-slate-300">Events</span>
               </button>
               <button onClick={() => { setPage('admin'); setMobileMenuOpen(false); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-colors text-left">
@@ -294,6 +320,9 @@ function AppContent() {
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="space-y-6">
 
+          {/* NWS Weather Alerts */}
+          <NWSAlertBanner />
+
           {/* Lake Conditions — Top Section */}
           <section>
             <LakePanel data={lakeData} />
@@ -316,6 +345,11 @@ function AppContent() {
                 <ForecastPanel forecast={forecast} />
               </div>
             </div>
+          </section>
+
+          {/* Sun/Moon Card */}
+          <section>
+            <SunMoonCard />
           </section>
 
           {/* Weather Radar */}

@@ -29,6 +29,8 @@ const facebookRoutes = require('./routes/facebookRoutes');
 const discussionRoutes = require('./routes/discussionRoutes');
 const authRoutes = require('./routes/authRoutes');
 const fishingRoutes = require('./routes/fishingRoutes');
+const communityRoutes = require('./routes/communityRoutes');
+const eventsRoutes = require('./routes/eventsRoutes');
 console.log('[Boot] Routes loaded');
 
 try {
@@ -65,6 +67,8 @@ app.use('/api/lots', lotsRoutes);
 app.use('/api/facebook', facebookRoutes);
 app.use('/api/discussions', discussionRoutes);
 app.use('/api/fishing', fishingRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/events', eventsRoutes);
 app.use('/api/auth', authRoutes);
 
 // Initialize services

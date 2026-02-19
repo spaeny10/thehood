@@ -289,6 +289,22 @@ async function initializeDatabase() {
       )
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS community_events (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        event_date DATE NOT NULL,
+        event_time TEXT DEFAULT '',
+        location TEXT DEFAULT '',
+        author_name TEXT NOT NULL DEFAULT 'Anonymous',
+        author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_events_date ON community_events(event_date)`);
+
     await client.query('COMMIT');
     console.log('✓ Database initialized successfully');
   } catch (err) {

@@ -91,6 +91,20 @@ export const discussionApi = {
   deleteComment: (id, commentId) => api.delete(`/discussions/${id}/comments/${commentId}`),
 };
 
+// Community API calls
+export const communityApi = {
+  getSunMoon: () => api.get('/community/sun-moon'),
+  getNWSAlerts: () => api.get('/community/nws-alerts'),
+};
+
+// Events API calls
+export const eventsApi = {
+  getUpcoming: () => api.get('/events'),
+  getAll: () => api.get('/events/all'),
+  create: (data) => api.post('/events', data),
+  delete: (id) => api.delete(`/events/${id}`),
+};
+
 // Health check
 export const healthCheck = () => api.get('/health');
 
