@@ -199,39 +199,36 @@ const CourtMap = ({ onNavigate }) => {
           <div className="street-label-h railroad">RAILROAD AVENUE</div>
 
           {/* ═══════ SOUTH GRID ═══════ */}
-          <div className="south-grid">
-            <VLabel>SCOTCH STREET</VLabel>
-            <div className="south-lots-area">
-              {[
-                [36, 37, 38, 39, 40],
-                [31, 32, 33, 34, 35],
-                [26, 27, 28, 29, 30],
-                [21, 22, 23, 24, 25],
-                [16, 17, 18, 19, 20],
-                [11, 12, 13, 14, 15],
-                [6, 7, 8, 9, 10],
-                [1, 2, 3, 4, 5],
-              ].map((row, i) => (
-                <div key={i} className="south-row">
-                  <Lot num={row[0]} />
-                  <Lot num={row[1]} />
-                  <div className="row-gap" />
-                  <Lot num={row[2]} />
-                  <Lot num={row[3]} />
-                  <div className="row-gap" />
-                  <Lot num={row[4]} />
+          {(() => {
+            const rows = [
+              [36, 37, 38, 39, 40],
+              [31, 32, 33, 34, 35],
+              [26, 27, 28, 29, 30],
+              [21, 22, 23, 24, 25],
+              [16, 17, 18, 19, 20],
+              [11, 12, 13, 14, 15],
+              [6, 7, 8, 9, 10],
+              [1, 2, 3, 4, 5],
+            ];
+            return (
+              <div className="south-grid">
+                <VLabel>SCOTCH STREET</VLabel>
+                <div className="lot-col-group">
+                  {rows.map((r, i) => <div key={i} className="lot-pair"><Lot num={r[0]} /><Lot num={r[1]} /></div>)}
+                  <div className="dumpster-row-marker"><span className="dumpster-tag">D</span></div>
                 </div>
-              ))}
-              {/* Dumpster markers at bottom */}
-              <div className="south-row dumpster-row">
-                <span className="dumpster-tag" style={{ gridColumn: '1' }}>D</span>
-                <span className="dumpster-tag" style={{ gridColumn: '7' }}>D</span>
+                <VLabel>VODKA STREET</VLabel>
+                <div className="lot-col-group">
+                  {rows.map((r, i) => <div key={i} className="lot-pair"><Lot num={r[2]} /><Lot num={r[3]} /></div>)}
+                </div>
+                <VLabel>BOURBON STREET</VLabel>
+                <div className="lot-col-group lot-col-single">
+                  {rows.map((r, i) => <div key={i} className="lot-single"><Lot num={r[4]} /></div>)}
+                  <div className="dumpster-row-marker"><span className="dumpster-tag">D</span></div>
+                </div>
               </div>
-            </div>
-            <VLabel>VODKA STREET</VLabel>
-            <div style={{ width: '8px' }} />
-            <VLabel>BOURBON STREET</VLabel>
-          </div>
+            );
+          })()}
 
           {/* ═══════ 29TH ROAD ═══════ */}
           <div className="street-label-h">29TH ROAD</div>
@@ -585,38 +582,29 @@ const CourtMap = ({ onNavigate }) => {
         .south-grid {
           margin-top: 4px;
           display: grid;
-          grid-template-columns: auto 1fr auto 8px auto;
-          gap: 0;
+          grid-template-columns: auto 2fr auto 2fr auto 1fr;
+          gap: 0 4px;
           align-items: stretch;
         }
-        .south-lots-area {
+        .lot-col-group {
           display: flex;
           flex-direction: column;
           gap: 2px;
         }
-        .south-row {
+        .lot-pair {
           display: grid;
-          grid-template-columns: 1fr 1fr 14px 1fr 1fr 14px 1fr;
+          grid-template-columns: 1fr 1fr;
           gap: 2px;
         }
-        .row-gap {
-          background: transparent;
-          width: 14px;
+        .lot-single {
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+        .dumpster-row-marker {
           display: flex;
           align-items: center;
           justify-content: center;
-        }
-        .row-gap::after {
-          content: '';
-          width: 2px;
-          height: 100%;
-          background: #2a2a3a;
-        }
-        .dumpster-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr 14px 1fr 1fr 14px 1fr;
           padding: 6px 0;
-          align-items: center;
         }
 
         /* ── Map footer note ── */
