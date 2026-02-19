@@ -96,176 +96,179 @@ const CourtMap = ({ onNavigate }) => {
     <div className="min-h-screen bg-dark-bg">
       {/* Header */}
       <header className="border-b border-dark-border/50 bg-dark-bg sticky top-0 z-10 backdrop-blur-sm">
-        <div className="max-w-[1100px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={() => onNavigate('dashboard')} className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 flex items-center justify-center transition-colors">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <button onClick={() => onNavigate('dashboard')} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 flex items-center justify-center transition-colors shrink-0">
                 <ArrowLeft className="w-5 h-5 text-slate-400" />
               </button>
-              <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">Court Map</h1>
-                <p className="text-xs text-slate-500">Kanopolanes Park at Lake Kanopolis, Kansas</p>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">Court Map</h1>
+                <p className="text-[10px] sm:text-xs text-slate-500 truncate hidden sm:block">Kanopolanes Park at Lake Kanopolis, Kansas</p>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative shrink-0">
               <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Search owner or lot…"
-                className="pl-9 pr-3 py-2 bg-dark-card border border-dark-border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500/50 w-56" />
+                placeholder="Search…"
+                className="pl-9 pr-3 py-2 bg-dark-card border border-dark-border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500/50 w-36 sm:w-56" />
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1100px] mx-auto px-6 py-6">
-        <div className="court-map">
-          {/* ═══════ TITLE ═══════ */}
-          <div className="map-title">
-            <h2>COURT MAP</h2>
-            <p>Kanopolanes Park at Lake Kanopolis, Kansas</p>
-          </div>
-
-          {/* ═══════ TOP ROW — Keystone Court north lots + dumpster/compass ═══════ */}
-          <div className="top-section">
-            <div className="top-info-left" />
-            <div className="top-row-lots">
-              <Lot num={63} flip />
-              <Lot num={62} flip />
-              <Lot num={61} flip />
-              <Lot num={60} flip />
-              <Lot num={59} flip />
+      <main className="max-w-[1100px] mx-auto px-2 sm:px-6 py-4 sm:py-6">
+        <div className="court-map-scroll-wrapper">
+          <div className="court-map">
+            {/* ═══════ TITLE ═══════ */}
+            <div className="map-title">
+              <h2>COURT MAP</h2>
+              <p>Kanopolanes Park at Lake Kanopolis, Kansas</p>
             </div>
-            <div className="top-info-right">
-              <span className="compass">→ N</span>
-              <div className="speed-box">Vehicle Speed Limit<br /><strong>5 mph</strong></div>
-            </div>
-          </div>
 
-          {/* Lot numbers row */}
-          <div className="top-section" style={{ marginTop: 0 }}>
-            <div className="top-info-left">
-              <span className="dumpster-tag">D</span>
-            </div>
-            <div className="num-row">
-              <span>63</span><span>62</span><span>61</span><span>60</span><span>59</span>
-            </div>
-            <div className="top-info-right" />
-          </div>
-
-          {/* ═══════ KEYSTONE COURT label ═══════ */}
-          <div className="street-label-h">KEYSTONE COURT</div>
-
-          {/* ═══════ NORTH GRID — Coors Court / Center / Budweiser Blvd ═══════ */}
-          <div className="north-grid">
-            {/* Left info column — Emergency numbers */}
-            <div className="north-info-left">
-              <div className="emergency-box">
-                <h4>EMERGENCY NUMBERS</h4>
-                <p className="e911">911</p>
-                <p>Law Enforcement<br />Ambulance<br />Fire</p>
-                <p className="esmall">(785) 472-4416<br />Ellsworth County Sheriff<br />(non-emergency)</p>
-                <p className="esmall">(866) 357-4212<br />Ark Valley Electric</p>
-                <p className="esmall">(785) 546-2294<br />Corps of Engineers – Kanopolis</p>
-                <p className="esmall">(785) 546-2345<br />KDWP – Kanopolis State Park</p>
+            {/* ═══════ TOP ROW — Keystone Court north lots + dumpster/compass ═══════ */}
+            <div className="top-section">
+              <div className="top-info-left" />
+              <div className="top-row-lots">
+                <Lot num={63} flip />
+                <Lot num={62} flip />
+                <Lot num={61} flip />
+                <Lot num={60} flip />
+                <Lot num={59} flip />
               </div>
-              <p className="dumpster-key"><span className="dumpster-tag">D</span> Dumpster locations</p>
-              <p className="updated-text">Updated: 11/26/2025</p>
-            </div>
-
-            {/* Coors Court west column */}
-            <VLabel>COORS COURT</VLabel>
-            <div className="lot-col">
-              {[46, 45, 44, 43, 42, 41].map(n => <Lot key={n} num={n} />)}
-            </div>
-
-            {/* Center lots */}
-            <div className="lot-col">
-              {[52, 51, 50, 49, 48, 47].map(n => <Lot key={n} num={n} />)}
-            </div>
-
-            {/* Budweiser Blvd */}
-            <VLabel>BUDWEISER BLVD</VLabel>
-            <div className="lot-col">
-              {[58, 57, 56, 55, 54, 53].map(n => <Lot key={n} num={n} />)}
-            </div>
-
-            {/* Right dumpster marker */}
-            <div className="north-info-right">
-              <span className="dumpster-tag">D</span>
-            </div>
-          </div>
-
-          {/* ═══════ RAILROAD AVENUE ═══════ */}
-          <div className="street-label-h railroad">RAILROAD AVENUE</div>
-
-          {/* ═══════ SOUTH GRID ═══════ */}
-          {(() => {
-            const rows = [
-              [36, 37, 38, 39, 40],
-              [31, 32, 33, 34, 35],
-              [26, 27, 28, 29, 30],
-              [21, 22, 23, 24, 25],
-              [16, 17, 18, 19, 20],
-              [11, 12, 13, 14, 15],
-              [6, 7, 8, 9, 10],
-              [1, 2, 3, 4, 5],
-            ];
-            return (
-              <div className="south-grid">
-                <VLabel>SCOTCH STREET</VLabel>
-                <div className="lot-col-group">
-                  {rows.map((r, i) => <div key={i} className="lot-pair"><Lot num={r[0]} /><Lot num={r[1]} /></div>)}
-                  <div className="dumpster-row-marker"><span className="dumpster-tag">D</span></div>
-                </div>
-                <VLabel>VODKA STREET</VLabel>
-                <div className="lot-col-group">
-                  {rows.map((r, i) => <div key={i} className="lot-pair"><Lot num={r[2]} /><Lot num={r[3]} /></div>)}
-                </div>
-                <VLabel>BOURBON STREET</VLabel>
-                <div className="lot-col-group lot-col-single">
-                  {rows.map((r, i) => <div key={i} className="lot-single"><Lot num={r[4]} /></div>)}
-                  <div className="dumpster-row-marker"><span className="dumpster-tag">D</span></div>
-                </div>
+              <div className="top-info-right">
+                <span className="compass">→ N</span>
+                <div className="speed-box">Vehicle Speed Limit<br /><strong>5 mph</strong></div>
               </div>
-            );
-          })()}
+            </div>
 
-          {/* ═══════ 29TH ROAD ═══════ */}
-          <div className="street-label-h">29TH ROAD</div>
+            {/* Lot numbers row */}
+            <div className="top-section" style={{ marginTop: 0 }}>
+              <div className="top-info-left">
+                <span className="dumpster-tag">D</span>
+              </div>
+              <div className="num-row">
+                <span>63</span><span>62</span><span>61</span><span>60</span><span>59</span>
+              </div>
+              <div className="top-info-right" />
+            </div>
 
-          {/* ═══════ FOOTER NOTE ═══════ */}
-          <div className="map-footer-note">
-            <p><strong>FIREWORKS ARE NOT ALLOWED IN THE PARK DUE TO ALL THE PROPANE TANKS.</strong></p>
-            <p><em>Please take time to read the rules for the court.</em></p>
-          </div>
-        </div>
+            {/* ═══════ KEYSTONE COURT label ═══════ */}
+            <div className="street-label-h">KEYSTONE COURT</div>
 
-        {/* Legend */}
-        <div className="flex items-center justify-center gap-6 py-4 mt-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 border border-slate-500" />
-            <span className="text-[10px] text-slate-500">Occupied</span>
+            {/* ═══════ NORTH GRID — Coors Court / Center / Budweiser Blvd ═══════ */}
+            <div className="north-grid">
+              {/* Left info column — Emergency numbers */}
+              <div className="north-info-left">
+                <div className="emergency-box">
+                  <h4>EMERGENCY NUMBERS</h4>
+                  <p className="e911">911</p>
+                  <p>Law Enforcement<br />Ambulance<br />Fire</p>
+                  <p className="esmall">(785) 472-4416<br />Ellsworth County Sheriff<br />(non-emergency)</p>
+                  <p className="esmall">(866) 357-4212<br />Ark Valley Electric</p>
+                  <p className="esmall">(785) 546-2294<br />Corps of Engineers – Kanopolis</p>
+                  <p className="esmall">(785) 546-2345<br />KDWP – Kanopolis State Park</p>
+                </div>
+                <p className="dumpster-key"><span className="dumpster-tag">D</span> Dumpster locations</p>
+                <p className="updated-text">Updated: 11/26/2025</p>
+              </div>
+
+              {/* Coors Court west column */}
+              <VLabel>COORS COURT</VLabel>
+              <div className="lot-col">
+                {[46, 45, 44, 43, 42, 41].map(n => <Lot key={n} num={n} />)}
+              </div>
+
+              {/* Center lots */}
+              <div className="lot-col">
+                {[52, 51, 50, 49, 48, 47].map(n => <Lot key={n} num={n} />)}
+              </div>
+
+              {/* Budweiser Blvd */}
+              <VLabel>BUDWEISER BLVD</VLabel>
+              <div className="lot-col">
+                {[58, 57, 56, 55, 54, 53].map(n => <Lot key={n} num={n} />)}
+              </div>
+
+              {/* Right dumpster marker */}
+              <div className="north-info-right">
+                <span className="dumpster-tag">D</span>
+              </div>
+            </div>
+
+            {/* ═══════ RAILROAD AVENUE ═══════ */}
+            <div className="street-label-h railroad">RAILROAD AVENUE</div>
+
+            {/* ═══════ SOUTH GRID ═══════ */}
+            {(() => {
+              const rows = [
+                [36, 37, 38, 39, 40],
+                [31, 32, 33, 34, 35],
+                [26, 27, 28, 29, 30],
+                [21, 22, 23, 24, 25],
+                [16, 17, 18, 19, 20],
+                [11, 12, 13, 14, 15],
+                [6, 7, 8, 9, 10],
+                [1, 2, 3, 4, 5],
+              ];
+              return (
+                <div className="south-grid">
+                  <VLabel>SCOTCH STREET</VLabel>
+                  <div className="lot-col-group">
+                    {rows.map((r, i) => <div key={i} className="lot-pair"><Lot num={r[0]} /><Lot num={r[1]} /></div>)}
+                    <div className="dumpster-row-marker"><span className="dumpster-tag">D</span></div>
+                  </div>
+                  <VLabel>VODKA STREET</VLabel>
+                  <div className="lot-col-group">
+                    {rows.map((r, i) => <div key={i} className="lot-pair"><Lot num={r[2]} /><Lot num={r[3]} /></div>)}
+                  </div>
+                  <VLabel>BOURBON STREET</VLabel>
+                  <div className="lot-col-group lot-col-single">
+                    {rows.map((r, i) => <div key={i} className="lot-single"><Lot num={r[4]} /></div>)}
+                    <div className="dumpster-row-marker"><span className="dumpster-tag">D</span></div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ═══════ 29TH ROAD ═══════ */}
+            <div className="street-label-h">29TH ROAD</div>
+
+            {/* ═══════ FOOTER NOTE ═══════ */}
+            <div className="map-footer-note">
+              <p><strong>FIREWORKS ARE NOT ALLOWED IN THE PARK DUE TO ALL THE PROPANE TANKS.</strong></p>
+              <p><em>Please take time to read the rules for the court.</em></p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 border border-amber-500/60 bg-amber-500/10" />
-            <span className="text-[10px] text-slate-500">For Sale</span>
+
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-6 py-4 mt-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 border border-slate-500" />
+              <span className="text-[10px] text-slate-500">Occupied</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 border border-amber-500/60 bg-amber-500/10" />
+              <span className="text-[10px] text-slate-500">For Sale</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 border border-slate-600/40 bg-slate-800/30" />
+              <span className="text-[10px] text-slate-500">Vacant</span>
+            </div>
+            <span className="text-[10px] text-slate-600 italic">Click any lot to edit</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 border border-slate-600/40 bg-slate-800/30" />
-            <span className="text-[10px] text-slate-500">Vacant</span>
-          </div>
-          <span className="text-[10px] text-slate-600 italic">Click any lot to edit</span>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="border-t border-dark-border/30 mt-8">
-        <div className="max-w-[1100px] mx-auto px-6 py-5">
+        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <nav className="flex items-center gap-6">
               <span className="text-sm font-semibold text-white">Kanopolanes</span>
               <button onClick={() => onNavigate('dashboard')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Dashboard</button>
               <button className="text-xs text-amber-400 hover:text-amber-300 transition-colors font-medium">Court Map</button>
+              <button onClick={() => onNavigate('discuss')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Discuss</button>
               <button onClick={() => onNavigate('admin')} className="text-xs text-slate-500 hover:text-slate-300 transition-colors font-medium">Settings</button>
             </nav>
             <p className="text-xs text-slate-600">Ambient Weather • USGS Water Data • Open-Meteo Forecast</p>
@@ -622,6 +625,92 @@ const CourtMap = ({ onNavigate }) => {
         .map-footer-note strong {
           color: #ef4444;
           font-size: 11px;
+        }
+        /* ── Court map scroll wrapper (mobile) ── */
+        .court-map-scroll-wrapper {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .court-map {
+          min-width: 580px;
+        }
+
+        /* ── Mobile overrides ── */
+        @media (max-width: 640px) {
+          .court-map {
+            min-width: 520px;
+          }
+          .map-title {
+            margin-bottom: 10px;
+          }
+          .map-title h2 {
+            font-size: 13px;
+          }
+          .map-title p {
+            font-size: 9px;
+          }
+          .lot-cell {
+            padding: 3px 2px;
+            min-height: 42px;
+          }
+          .lot-num {
+            font-size: 11px;
+          }
+          .lot-owner {
+            font-size: 9px;
+          }
+          .lot-owner2 {
+            font-size: 8px;
+          }
+          .lot-sale {
+            font-size: 7px;
+          }
+          .top-section {
+            grid-template-columns: 0px 1fr 80px;
+          }
+          .top-info-left {
+            display: none;
+          }
+          .top-info-right {
+            padding: 2px;
+          }
+          .speed-box {
+            font-size: 7px;
+            padding: 2px 4px;
+          }
+          .speed-box strong {
+            font-size: 11px;
+          }
+          .compass {
+            font-size: 11px;
+          }
+          .north-grid {
+            grid-template-columns: auto 1fr 1fr auto 1fr auto;
+          }
+          .north-info-left {
+            display: none;
+          }
+          .north-info-right {
+            padding: 4px;
+          }
+          .street-label-h {
+            font-size: 9px;
+            padding: 5px 0;
+            letter-spacing: 0.12em;
+          }
+          .vlabel span {
+            font-size: 7px;
+            letter-spacing: 0.1em;
+          }
+          .emergency-box {
+            display: none;
+          }
+          .dumpster-key {
+            display: none;
+          }
+          .updated-text {
+            display: none;
+          }
         }
       `}</style>
     </div>
