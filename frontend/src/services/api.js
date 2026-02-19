@@ -55,6 +55,7 @@ export const forecastApi = {
 // Lake API calls
 export const lakeApi = {
   get: () => api.get('/lake'),
+  getHistorical: (hours = 168) => api.get(`/lake/historical?hours=${hours}&limit=500`),
 };
 
 // Settings API calls

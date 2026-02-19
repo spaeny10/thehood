@@ -12,4 +12,16 @@ const getLakeConditions = async (req, res) => {
     }
 };
 
-module.exports = { getLakeConditions };
+const getLakeHistorical = async (req, res) => {
+    try {
+        const hours = parseInt(req.query.hours) || 168;
+        const limit = parseInt(req.query.limit) || 500;
+        const data = await lakeService.getHistorical(hours, limit);
+        res.json(data);
+    } catch (error) {
+        console.error('Error getting lake history:', error);
+        res.status(500).json({ error: 'Failed to fetch lake history' });
+    }
+};
+
+module.exports = { getLakeConditions, getLakeHistorical };
