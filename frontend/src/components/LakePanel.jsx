@@ -8,6 +8,7 @@ const LakePanel = ({ data }) => {
     const [timeRange, setTimeRange] = useState(168); // 7 days default
     const [fishingReport, setFishingReport] = useState(null);
     const [trendsOpen, setTrendsOpen] = useState(false);
+    const [fishingOpen, setFishingOpen] = useState(false);
 
     useEffect(() => {
         loadHistory();
@@ -244,30 +245,67 @@ const LakePanel = ({ data }) => {
             {/* ═══ FISHING REPORT ═══ */}
             {fishingReport && (
                 <div className="card">
-                    <div className="flex items-center justify-between mb-4">
+                    <button onClick={() => setFishingOpen(!fishingOpen)} className="flex items-center justify-between w-full cursor-pointer" style={{ background: 'none', border: 'none', padding: 0 }}>
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                                <Fish className="w-4.5 h-4.5 text-emerald-400" />
+                                <Fish className="w-4 h-4 text-emerald-400" />
                             </div>
-                            <div>
+                            <div className="text-left">
                                 <h3 className="text-base font-bold text-white">Fishing Report</h3>
-                                <p className="text-[10px] text-slate-500">{fishingReport.source}</p>
+                                <p className="text-[10px] text-slate-500">
+                                    {fishingReport.source}{fishingReport.updated_date ? ` • Updated ${fishingReport.updated_date}` : ''}
+                                </p>
                             </div>
                         </div>
-                        <a href={fishingReport.url} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
-                            KDWP <ExternalLink className="w-3 h-3" />
-                        </a>
-                    </div>
-                    <div className="bg-dark-bg rounded-xl p-4">
-                        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
-                            {fishingReport.report}
-                        </p>
-                    </div>
-                    {fishingReport.fetched_at && (
-                        <p className="text-[10px] text-slate-600 mt-2 text-right">
-                            Updated {new Date(fishingReport.fetched_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                        </p>
+                        <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${fishingOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {fishingOpen && (
+                        <div className="mt-4">
+                            {/* Species Table */}
+                            {fishingReport.species && fishingReport.species.length > 0 && (
+                                <div className="space-y-2">
+                                    {fishingReport.species.map((fish, i) => (
+                                        <div key={i} className="bg-dark-bg rounded-xl p-3">
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <span className="text-sm font-semibold text-white">{fish.name}</span>
+                                                <div className="flex items-center gap-2">
+                                                    {fish.size && <span className="text-[11px] text-slate-400">{fish.size}</span>}
+                                                    {fish.rating && (
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${fish.rating.toLowerCase() === 'good'
+                                                            ? 'bg-emerald-500/20 text-emerald-400'
+                                                            : fish.rating.toLowerCase() === 'fair'
+                                                                ? 'bg-amber-500/20 text-amber-400'
+                                                                : fish.rating.toLowerCase() === 'excellent'
+                                                                    ? 'bg-cyan-500/20 text-cyan-400'
+                                                                    : 'bg-slate-500/20 text-slate-400'
+                                                            }`}>
+                                                            {fish.rating}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {fish.details && (
+                                                <p className="text-xs text-slate-400 leading-relaxed">{fish.details}</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Footer with link */}
+                            <div className="flex items-center justify-between mt-3">
+                                <a href={fishingReport.url} target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
+                                    Full report on KDWP <ExternalLink className="w-3 h-3" />
+                                </a>
+                                {fishingReport.fetched_at && (
+                                    <p className="text-[10px] text-slate-600">
+                                        Fetched {new Date(fishingReport.fetched_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
             )}
