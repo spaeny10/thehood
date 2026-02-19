@@ -1,15 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Waves, Thermometer, ArrowDownToLine, Activity, TrendingUp } from 'lucide-react';
+import { Waves, Thermometer, ArrowDownToLine, Activity, TrendingUp, Fish, ExternalLink } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { lakeApi } from '../services/api';
 
 const LakePanel = ({ data }) => {
     const [history, setHistory] = useState([]);
     const [timeRange, setTimeRange] = useState(168); // 7 days default
+    const [fishingReport, setFishingReport] = useState(null);
 
     useEffect(() => {
         loadHistory();
+        loadFishingReport();
     }, [timeRange]);
+
+    const loadFishingReport = async () => {
+        try {
+            const res = await lakeApi.getFishingReport();
+            setFishingReport(res.data);
+        } catch (err) {
+            console.error('Error loading fishing report:', err);
+        }
+    };
 
     const loadHistory = async () => {
         try {
@@ -221,6 +232,37 @@ const LakePanel = ({ data }) => {
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
+                </div>
+            )}
+
+            {/* ═══ FISHING REPORT ═══ */}
+            {fishingReport && (
+                <div className="card">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                                <Fish className="w-4.5 h-4.5 text-emerald-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-white">Fishing Report</h3>
+                                <p className="text-[10px] text-slate-500">{fishingReport.source}</p>
+                            </div>
+                        </div>
+                        <a href={fishingReport.url} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 transition-colors">
+                            KDWP <ExternalLink className="w-3 h-3" />
+                        </a>
+                    </div>
+                    <div className="bg-dark-bg rounded-xl p-4">
+                        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
+                            {fishingReport.report}
+                        </p>
+                    </div>
+                    {fishingReport.fetched_at && (
+                        <p className="text-[10px] text-slate-600 mt-2 text-right">
+                            Updated {new Date(fishingReport.fetched_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        </p>
+                    )}
                 </div>
             )}
         </div>
