@@ -27,7 +27,7 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [trendRange, setTrendRange] = useState(24);
+  const [trendRange, setTrendRange] = useState(99999);
   const [weatherTrendsOpen, setWeatherTrendsOpen] = useState(false);
   const [sunMoonData, setSunMoonData] = useState(null);
 
@@ -392,6 +392,7 @@ function AppContent() {
                       { label: '7d', hours: 168 },
                       { label: '30d', hours: 720 },
                       { label: '3mo', hours: 2160 },
+                      { label: 'All', hours: 99999 },
                     ].map(opt => (
                       <button key={opt.hours} onClick={() => setTrendRange(opt.hours)}
                         className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${trendRange === opt.hours
