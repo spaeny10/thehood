@@ -84,6 +84,29 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', database: dbConnected ? 'connected' : 'connecting', timestamp: new Date().toISOString() });
 });
 
+// DB diagnostics
+app.get('/api/debug/db-stats', async (req, res) => {
+  try {
+    const { pool } = require('./config/database');
+    const [weather, lake] = await Promise.all([
+      pool.query(`SELECT COUNT(*) as count, MIN(timestamp) as oldest, MAX(timestamp) as newest FROM weather_data`),
+      pool.query(`SELECT COUNT(*) as count, MIN(timestamp) as oldest, MAX(timestamp) as newest FROM lake_data`),
+    ]);
+    const fmt = (row) => ({
+      count: parseInt(row.count),
+      oldest: row.oldest ? new Date(Number(row.oldest)).toISOString() : null,
+      newest: row.newest ? new Date(Number(row.newest)).toISOString() : null,
+    });
+    res.json({
+      weather_data: fmt(weather.rows[0]),
+      lake_data: fmt(lake.rows[0]),
+      server_time: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Serve frontend static files
 const frontendDist = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendDist));
