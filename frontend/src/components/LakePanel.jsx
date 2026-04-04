@@ -5,7 +5,7 @@ import { lakeApi } from '../services/api';
 
 const LakePanel = ({ data }) => {
     const [history, setHistory] = useState([]);
-    const [timeRange, setTimeRange] = useState(168); // 7 days default
+    const [timeRange, setTimeRange] = useState(99999); // all time default
     const [fishingReport, setFishingReport] = useState(null);
     const [trendsOpen, setTrendsOpen] = useState(false);
     const [fishingOpen, setFishingOpen] = useState(false);
@@ -175,7 +175,7 @@ const LakePanel = ({ data }) => {
                 {trendsOpen && (
                     <div>
                         <div className="flex items-center justify-end gap-1 mt-3 mb-4">
-                            {[{ label: '24h', hours: 24 }, { label: '3d', hours: 72 }, { label: '7d', hours: 168 }, { label: '30d', hours: 720 }].map(opt => (
+                            {[{ label: '24h', hours: 24 }, { label: '3d', hours: 72 }, { label: '7d', hours: 168 }, { label: '30d', hours: 720 }, { label: 'All', hours: 99999 }].map(opt => (
                                 <button key={opt.hours} onClick={() => setTimeRange(opt.hours)}
                                     className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${timeRange === opt.hours
                                         ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
