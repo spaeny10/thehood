@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const { pool } = require('../config/database');
 const AmbientWeatherService = require('./ambientWeather');
+const settingsService = require('./settingsService');
 
 class DataCollectorService {
   constructor() {
@@ -8,12 +9,14 @@ class DataCollectorService {
       process.env.AMBIENT_API_KEY,
       process.env.AMBIENT_APPLICATION_KEY
     );
-    this.collectInterval = process.env.DATA_COLLECTION_INTERVAL || 5;
+    this.collectInterval = 5;
     this.isRunning = false;
+    this.cronJob = null;
   }
 
-  start() {
+  async start() {
     if (this.isRunning) return;
+    this.collectInterval = await settingsService.getNumber('weather_collection_interval') || 5;
     this.collectData();
     this.cronJob = cron.schedule(`*/${this.collectInterval} * * * *`, () => this.collectData());
     this.isRunning = true;
@@ -23,6 +26,8 @@ class DataCollectorService {
   stop() {
     if (this.cronJob) { this.cronJob.stop(); this.isRunning = false; console.log('✓ Data collector stopped'); }
   }
+
+  restart() { this.stop(); this.start(); }
 
   async collectData() {
     try {

@@ -46,14 +46,14 @@ class LakeService {
 
             const result = {
                 name: 'Kanopolis Lake',
-                elevation: elevation?.value || null,
+                elevation: elevation?.value ?? null,
                 conservation_level: config.conservationLevel,
-                level_diff: levelDiff?.value || null,
-                storage_acre_ft: storage?.value || null,
-                water_temp_c: waterTempC?.value || null,
+                level_diff: levelDiff?.value ?? null,
+                storage_acre_ft: storage?.value ?? null,
+                water_temp_c: waterTempC?.value ?? null,
                 water_temp_f: waterTempF,
-                outflow_cfs: outflow?.value || null,
-                last_updated: elevation?.dateTime || damSeries?.[0]?.values?.[0]?.value?.[0]?.dateTime || null
+                outflow_cfs: outflow?.value ?? null,
+                last_updated: elevation?.dateTime ?? damSeries?.[0]?.values?.[0]?.value?.[0]?.dateTime ?? null
             };
 
             this.cache = result;

@@ -1,10 +1,9 @@
 const axios = require('axios');
+const settingsService = require('./settingsService');
 
 class ForecastService {
     constructor() {
         this.baseURL = 'https://api.open-meteo.com/v1/forecast';
-        this.latitude = process.env.LATITUDE || 32.78;
-        this.longitude = process.env.LONGITUDE || -96.80;
         this.cache = null;
         this.cacheExpiry = 0;
         this.cacheDuration = 30 * 60 * 1000; // 30 minutes
@@ -20,10 +19,13 @@ class ForecastService {
         }
 
         try {
+            const latitude = await settingsService.getNumber('latitude') || 38.66;
+            const longitude = await settingsService.getNumber('longitude') || -98.78;
+
             const response = await axios.get(this.baseURL, {
                 params: {
-                    latitude: this.latitude,
-                    longitude: this.longitude,
+                    latitude,
+                    longitude,
                     hourly: [
                         'temperature_2m',
                         'relative_humidity_2m',

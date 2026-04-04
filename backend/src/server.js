@@ -134,7 +134,7 @@ app.listen(PORT, () => {
 dbReady.then(async () => {
   dbConnected = true;
   console.log('✓ Database connected, starting services...');
-  dataCollector.start();
+  await dataCollector.start();
   alertService.start();
   await lakeCollector.start();
   retentionService.start();

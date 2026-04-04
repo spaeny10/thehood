@@ -26,7 +26,7 @@ const CurrentWeather = ({ data, sunMoonData }) => {
   }
 
   const battValue = data.battery_outdoor;
-  const battLow = battValue === 1;
+  const battLow = battValue === 0;
   const battUnknown = battValue === null || battValue === undefined;
 
   return (
