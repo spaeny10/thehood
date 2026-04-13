@@ -1,6 +1,8 @@
 const LakeService = require('../services/lakeService');
+const LakeForecastService = require('../services/lakeForecastService');
 
 const lakeService = new LakeService();
+const lakeForecastService = new LakeForecastService();
 
 const getLakeConditions = async (req, res) => {
     try {
@@ -24,4 +26,15 @@ const getLakeHistorical = async (req, res) => {
     }
 };
 
-module.exports = { getLakeConditions, getLakeHistorical };
+const getLakeForecast = async (req, res) => {
+    try {
+        const data = await lakeForecastService.getLatestForecast();
+        if (!data) return res.status(503).json({ error: 'Forecast not available yet' });
+        res.json(data);
+    } catch (error) {
+        console.error('Error getting lake forecast:', error);
+        res.status(500).json({ error: 'Failed to fetch lake forecast' });
+    }
+};
+
+module.exports = { getLakeConditions, getLakeHistorical, getLakeForecast };

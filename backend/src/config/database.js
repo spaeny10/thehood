@@ -83,6 +83,41 @@ async function initializeDatabase() {
     }
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS lake_forecast (
+        id SERIAL PRIMARY KEY,
+        generated_at BIGINT NOT NULL,
+        current_elevation REAL,
+        predicted_elevation_24h REAL,
+        predicted_elevation_48h REAL,
+        predicted_elevation_72h REAL,
+        elevation_change_72h REAL,
+        trend TEXT,
+        current_inflow_cfs REAL,
+        current_outflow_cfs REAL,
+        precip_total_inches REAL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_lake_forecast_generated ON lake_forecast(generated_at)
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS lake_calibration (
+        id SERIAL PRIMARY KEY,
+        calibrated_at BIGINT NOT NULL,
+        runoff_coefficient REAL,
+        surge_threshold REAL,
+        elevation_factor REAL,
+        travel_hours_json TEXT,
+        data_points INTEGER,
+        accuracy_score REAL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL,

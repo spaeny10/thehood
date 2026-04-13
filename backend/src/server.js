@@ -43,6 +43,8 @@ try {
 const DataCollectorService = require('./services/dataCollector');
 const AlertService = require('./services/alertService');
 const LakeCollectorService = require('./services/lakeCollector');
+const LakeForecastCollector = require('./services/lakeForecastCollector');
+const LakeCalibrationService = require('./services/lakeCalibrationService');
 const RetentionService = require('./services/retentionService');
 console.log('[Boot] Services loaded');
 
@@ -75,6 +77,8 @@ app.use('/api/auth', authRoutes);
 const dataCollector = new DataCollectorService();
 const alertService = new AlertService();
 const lakeCollector = new LakeCollectorService();
+const lakeForecastCollector = new LakeForecastCollector();
+const lakeCalibration = new LakeCalibrationService();
 const retentionService = new RetentionService();
 
 let dbConnected = false;
@@ -137,6 +141,8 @@ dbReady.then(async () => {
   await dataCollector.start();
   alertService.start();
   await lakeCollector.start();
+  await lakeForecastCollector.start();
+  await lakeCalibration.start();
   retentionService.start();
   console.log('✓ All background services started');
 }).catch(err => {
@@ -145,7 +151,7 @@ dbReady.then(async () => {
 });
 
 // Graceful shutdown
-const shutdown = () => { dataCollector.stop(); alertService.stop(); lakeCollector.stop(); retentionService.stop(); process.exit(0); };
+const shutdown = () => { dataCollector.stop(); alertService.stop(); lakeCollector.stop(); lakeForecastCollector.stop(); lakeCalibration.stop(); retentionService.stop(); process.exit(0); };
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
