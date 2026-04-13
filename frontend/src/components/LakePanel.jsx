@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Waves, Thermometer, ArrowDownToLine, Activity, TrendingUp, Fish, ExternalLink, ChevronDown } from 'lucide-react';
+import { Waves, Thermometer, ArrowDownToLine, ArrowUpFromLine, Activity, TrendingUp, Fish, ExternalLink, ChevronDown, Wind } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { lakeApi } from '../services/api';
 
@@ -89,10 +89,10 @@ const LakePanel = ({ data }) => {
                 </div>
 
                 {/* Stats Row */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
 
                     {/* Pool Elevation + Gauge */}
-                    <div className="bg-dark-bg rounded-xl p-4 col-span-2">
+                    <div className="bg-dark-bg rounded-xl p-4 col-span-2 lg:col-span-3">
                         <div className="flex justify-between items-baseline mb-3">
                             <div className="flex items-center gap-1.5">
                                 <Activity className="w-4 h-4 text-amber-400" />
@@ -163,6 +163,36 @@ const LakePanel = ({ data }) => {
                             </p>
                         )}
                     </div>
+
+                    {/* Inflow */}
+                    <div className="bg-dark-bg rounded-xl p-4">
+                        <div className="flex items-center gap-1.5 mb-2">
+                            <ArrowUpFromLine className="w-4 h-4 text-emerald-400" />
+                            <span className="text-xs font-medium text-slate-400">Inflow</span>
+                        </div>
+                        <p className="text-2xl font-bold text-white">
+                            {data.inflow_cfs != null ? Math.round(data.inflow_cfs * 100) / 100 : '--'}
+                            <span className="text-xs text-slate-500 ml-1">cfs</span>
+                        </p>
+                        <p className="text-[10px] text-slate-600 mt-1">Corps of Engineers</p>
+                    </div>
+
+                    {/* Surface Wind */}
+                    <div className="bg-dark-bg rounded-xl p-4">
+                        <div className="flex items-center gap-1.5 mb-2">
+                            <Wind className="w-4 h-4 text-teal-400" />
+                            <span className="text-xs font-medium text-slate-400">Surface Wind</span>
+                        </div>
+                        <p className="text-2xl font-bold text-white">
+                            {data.surface_wind_mph != null ? data.surface_wind_mph : '--'}
+                            <span className="text-xs text-slate-500 ml-1">mph</span>
+                        </p>
+                        {data.surface_wind_dir != null && (
+                            <p className="text-xs text-slate-500 mt-1">
+                                {['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(data.surface_wind_dir / 22.5) % 16]}
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -223,12 +253,16 @@ const LakePanel = ({ data }) => {
                                     </ResponsiveContainer>
                                 </div>
 
-                                {/* Outflow Chart */}
-                                <div>
-                                    <p className="text-xs font-medium text-slate-400 mb-2">Dam Outflow (cfs)</p>
+                                {/* Inflow / Outflow Chart */}
+                                <div className="mb-6">
+                                    <p className="text-xs font-medium text-slate-400 mb-2">Inflow & Outflow (cfs)</p>
                                     <ResponsiveContainer width="100%" height={140}>
                                         <AreaChart data={history}>
                                             <defs>
+                                                <linearGradient id="inflowGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+                                                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                                                </linearGradient>
                                                 <linearGradient id="outflowGrad" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
                                                     <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
@@ -236,9 +270,23 @@ const LakePanel = ({ data }) => {
                                             </defs>
                                             <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
                                             <YAxis tick={{ fontSize: 10, fill: '#64748b' }} width={45} />
-                                            <Tooltip {...chartTooltipStyle} formatter={(v) => [`${v} cfs`, 'Outflow']} />
+                                            <Tooltip {...chartTooltipStyle} formatter={(v, name) => [`${v} cfs`, name === 'inflow_cfs' ? 'Inflow' : 'Outflow']} />
+                                            <Area type="monotone" dataKey="inflow_cfs" stroke="#10b981" fill="url(#inflowGrad)" strokeWidth={2} dot={false} />
                                             <Area type="monotone" dataKey="outflow_cfs" stroke="#3b82f6" fill="url(#outflowGrad)" strokeWidth={2} dot={false} />
                                         </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                {/* Surface Wind Chart */}
+                                <div>
+                                    <p className="text-xs font-medium text-slate-400 mb-2">Surface Wind (mph)</p>
+                                    <ResponsiveContainer width="100%" height={140}>
+                                        <LineChart data={history}>
+                                            <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
+                                            <YAxis tick={{ fontSize: 10, fill: '#64748b' }} width={35} />
+                                            <Tooltip {...chartTooltipStyle} formatter={(v) => [`${v} mph`, 'Wind']} />
+                                            <Line type="monotone" dataKey="surface_wind_mph" stroke="#14b8a6" strokeWidth={2} dot={false} />
+                                        </LineChart>
                                     </ResponsiveContainer>
                                 </div>
                             </>

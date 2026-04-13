@@ -31,7 +31,7 @@ class LakeCollectorService {
             const data = await this.lakeService.getLakeConditions();
             if (data && data.elevation !== null) {
                 await this.lakeService.saveLakeData(data);
-                console.log(`[Lake Collector] Lake data saved — elevation: ${data.elevation} ft, temp: ${data.water_temp_f}°F`);
+                console.log(`[Lake Collector] Lake data saved — elevation: ${data.elevation} ft, temp: ${data.water_temp_f}°F, inflow: ${data.inflow_cfs} cfs, wind: ${data.surface_wind_mph} mph`);
             }
         } catch (error) {
             console.error('[Lake Collector] Error:', error.message);

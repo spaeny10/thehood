@@ -60,6 +60,9 @@ async function initializeDatabase() {
         water_temp_c REAL,
         water_temp_f REAL,
         outflow_cfs REAL,
+        inflow_cfs REAL,
+        surface_wind_mph REAL,
+        surface_wind_dir INTEGER,
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
@@ -67,6 +70,17 @@ async function initializeDatabase() {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_lake_timestamp ON lake_data(timestamp)
     `);
+
+    // Add new lake_data columns if they don't exist (migration for existing DBs)
+    for (const col of [
+      ['inflow_cfs', 'REAL'],
+      ['surface_wind_mph', 'REAL'],
+      ['surface_wind_dir', 'INTEGER'],
+    ]) {
+      await client.query(`
+        ALTER TABLE lake_data ADD COLUMN IF NOT EXISTS ${col[0]} ${col[1]}
+      `).catch(() => {});
+    }
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS settings (

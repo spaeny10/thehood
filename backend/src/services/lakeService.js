@@ -5,7 +5,10 @@ const settingsService = require('./settingsService');
 class LakeService {
     constructor() {
         this.usgsBaseURL = 'https://waterservices.usgs.gov/nwis/iv/';
+        this.cwmsBaseURL = 'https://cwms-data.usace.army.mil/cwms-data';
         this.kdwpURL = 'https://ksoutdoors.gov/Fishing/Where-to-Fish-in-Kansas/Fishing-Locations-Public-Waters/Fishing-in-Northwest-Kansas/Kanopolis-Reservoir';
+        this.openMeteoURL = 'https://api.open-meteo.com/v1/forecast';
+        this.lakeCoords = { lat: 38.617, lon: -97.968 };
         this.cache = null;
         this.cacheExpiry = 0;
         this.cacheDuration = 30 * 60 * 1000;
@@ -49,15 +52,75 @@ class LakeService {
         }
     }
 
+    async fetchCWMSFlows() {
+        try {
+            const now = new Date();
+            const yesterday = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+            const begin = yesterday.toISOString();
+            const end = now.toISOString();
+
+            const [inflowRes, outflowRes] = await Promise.all([
+                axios.get(`${this.cwmsBaseURL}/timeseries`, {
+                    params: { office: 'NWDM', name: 'KANS.Flow-In.Ave.1Day.1Day.Best-NWK', begin, end },
+                    headers: { Accept: 'application/json;version=2' },
+                    timeout: 15000,
+                }),
+                axios.get(`${this.cwmsBaseURL}/timeseries`, {
+                    params: { office: 'NWDM', name: 'KANS.Flow-Out.Ave.1Day.1Day.Best-NWK', begin, end },
+                    headers: { Accept: 'application/json;version=2' },
+                    timeout: 15000,
+                }),
+            ]);
+
+            const getLatest = (data) => {
+                const vals = (data.values || []).filter(v => v[1] !== null);
+                return vals.length > 0 ? vals[vals.length - 1][1] : null;
+            };
+
+            const inflow = getLatest(inflowRes.data);
+            const outflow = getLatest(outflowRes.data);
+            console.log(`[Lake Service] CWMS flows — inflow: ${inflow} cfs, outflow: ${outflow} cfs`);
+            return { inflow, outflow };
+        } catch (error) {
+            console.error('[Lake Service] Error fetching CWMS flows:', error.message);
+            return { inflow: null, outflow: null };
+        }
+    }
+
+    async fetchSurfaceWind() {
+        try {
+            const response = await axios.get(this.openMeteoURL, {
+                params: {
+                    latitude: this.lakeCoords.lat,
+                    longitude: this.lakeCoords.lon,
+                    current: 'wind_speed_10m,wind_direction_10m',
+                    wind_speed_unit: 'mph',
+                },
+                timeout: 10000,
+            });
+            const current = response.data.current;
+            console.log(`[Lake Service] Surface wind: ${current.wind_speed_10m} mph, dir: ${current.wind_direction_10m}°`);
+            return {
+                speed: current.wind_speed_10m ?? null,
+                direction: current.wind_direction_10m ?? null,
+            };
+        } catch (error) {
+            console.error('[Lake Service] Error fetching surface wind:', error.message);
+            return { speed: null, direction: null };
+        }
+    }
+
     async getLakeConditions() {
         if (this.cache && Date.now() < this.cacheExpiry) return this.cache;
         const config = await this.getConfig();
 
         try {
-            const [lakeResponse, damResponse, kdwpTempF] = await Promise.all([
+            const [lakeResponse, damResponse, kdwpTempF, cwmsFlows, wind] = await Promise.all([
                 axios.get(this.usgsBaseURL, { params: { format: 'json', sites: config.lakeStation, parameterCd: '62614,99067,00054', siteStatus: 'all' } }),
                 axios.get(this.usgsBaseURL, { params: { format: 'json', sites: config.damStation, parameterCd: '00010,00060', siteStatus: 'all' } }),
                 this.fetchKDWPLakeTemp(),
+                this.fetchCWMSFlows(),
+                this.fetchSurfaceWind(),
             ]);
 
             const lakeSeries = lakeResponse.data.value.timeSeries;
@@ -66,7 +129,7 @@ class LakeService {
             const levelDiff = this.extractValue(lakeSeries, '99067');
             const storage = this.extractValue(lakeSeries, '00054');
             const waterTempC = this.extractValue(damSeries, '00010');
-            const outflow = this.extractValue(damSeries, '00060');
+            const usgsOutflow = this.extractValue(damSeries, '00060');
 
             // Prefer KDWP actual lake temperature, fall back to USGS dam station
             const usgsTempF = waterTempC ? Math.round((waterTempC.value * 9 / 5 + 32) * 10) / 10 : null;
@@ -74,6 +137,9 @@ class LakeService {
             const waterTempCFinal = kdwpTempF
                 ? Math.round((kdwpTempF - 32) * 5 / 9 * 10) / 10
                 : waterTempC?.value ?? null;
+
+            // Prefer CWMS outflow (Corps daily), fall back to USGS dam station
+            const outflow = cwmsFlows.outflow ?? usgsOutflow?.value ?? null;
 
             const result = {
                 name: 'Kanopolis Lake',
@@ -84,7 +150,10 @@ class LakeService {
                 water_temp_c: waterTempCFinal,
                 water_temp_f: waterTempF,
                 water_temp_source: kdwpTempF ? 'kdwp' : (usgsTempF ? 'usgs' : null),
-                outflow_cfs: outflow?.value ?? null,
+                outflow_cfs: outflow,
+                inflow_cfs: cwmsFlows.inflow,
+                surface_wind_mph: wind.speed,
+                surface_wind_dir: wind.direction,
                 last_updated: elevation?.dateTime ?? damSeries?.[0]?.values?.[0]?.value?.[0]?.dateTime ?? null
             };
 
@@ -100,8 +169,8 @@ class LakeService {
 
     async saveLakeData(data) {
         await pool.query(
-            `INSERT INTO lake_data (timestamp, elevation, conservation_level, level_diff, storage_acre_ft, water_temp_c, water_temp_f, outflow_cfs) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-            [Date.now(), data.elevation, data.conservation_level, data.level_diff, data.storage_acre_ft, data.water_temp_c, data.water_temp_f, data.outflow_cfs]
+            `INSERT INTO lake_data (timestamp, elevation, conservation_level, level_diff, storage_acre_ft, water_temp_c, water_temp_f, outflow_cfs, inflow_cfs, surface_wind_mph, surface_wind_dir) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+            [Date.now(), data.elevation, data.conservation_level, data.level_diff, data.storage_acre_ft, data.water_temp_c, data.water_temp_f, data.outflow_cfs, data.inflow_cfs, data.surface_wind_mph, data.surface_wind_dir]
         );
     }
 
