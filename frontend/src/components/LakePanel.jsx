@@ -60,6 +60,12 @@ const LakePanel = ({ data }) => {
     const isBelow = data.level_diff != null && data.level_diff < 0;
     const isAbove = data.level_diff != null && data.level_diff > 0;
 
+    // Summer pool: lake is typically held 4ft above conservation in summer
+    const summerPool = data.conservation_level + 4;
+    const summerDiff = data.elevation != null ? data.elevation - summerPool : null;
+    const summerDiffAbs = summerDiff != null ? Math.abs(summerDiff) : null;
+    const isSummer = (() => { const m = new Date().getMonth(); return m >= 4 && m <= 9; })(); // May–Oct
+
     // Gauge: map elevation to percentage (conservation pool = 100%, conservation - 10ft = 0%)
     const gaugeMin = data.conservation_level - 10;
     const gaugeRange = 10;
@@ -127,6 +133,14 @@ const LakePanel = ({ data }) => {
                                 Conservation: {data.conservation_level} ft
                             </span>
                         </div>
+                        {isSummer && summerDiffAbs != null && (
+                            <div className="mt-2 text-xs">
+                                <span className={`font-semibold ${summerDiff < 0 ? 'text-amber-400' : summerDiff > 0 ? 'text-cyan-400' : 'text-emerald-400'}`}>
+                                    {summerDiffAbs.toFixed(2)} ft {summerDiff < 0 ? 'below' : summerDiff > 0 ? 'above' : 'at'} summer pool
+                                </span>
+                                <span className="text-slate-500 ml-2">Summer Pool: {summerPool} ft</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Water Temperature */}
