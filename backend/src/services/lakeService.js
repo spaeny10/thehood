@@ -5,6 +5,7 @@ const settingsService = require('./settingsService');
 class LakeService {
     constructor() {
         this.usgsBaseURL = 'https://waterservices.usgs.gov/nwis/iv/';
+        this.kdwpURL = 'https://ksoutdoors.gov/Fishing/Where-to-Fish-in-Kansas/Fishing-Locations-Public-Waters/Fishing-in-Northwest-Kansas/Kanopolis-Reservoir';
         this.cache = null;
         this.cacheExpiry = 0;
         this.cacheDuration = 30 * 60 * 1000;
@@ -25,14 +26,38 @@ class LakeService {
         return { value: parseFloat(raw.value), dateTime: raw.dateTime };
     }
 
+    async fetchKDWPLakeTemp() {
+        try {
+            const response = await axios.get(this.kdwpURL, {
+                headers: { 'User-Agent': 'Kanopolanes Weather Dashboard' },
+                timeout: 15000,
+            });
+            const html = response.data;
+            const match = html.match(/<strong>Lake Temperature:<\/strong><\/div>\s*<div class="field-text">\s*([\d.]+)\s*F/i);
+            if (match) {
+                const tempF = parseFloat(match[1]);
+                if (!isNaN(tempF) && tempF > 0 && tempF < 120) {
+                    console.log(`[Lake Service] KDWP lake temperature: ${tempF}°F`);
+                    return tempF;
+                }
+            }
+            console.log('[Lake Service] KDWP lake temperature not found in page');
+            return null;
+        } catch (error) {
+            console.error('[Lake Service] Error fetching KDWP lake temp:', error.message);
+            return null;
+        }
+    }
+
     async getLakeConditions() {
         if (this.cache && Date.now() < this.cacheExpiry) return this.cache;
         const config = await this.getConfig();
 
         try {
-            const [lakeResponse, damResponse] = await Promise.all([
+            const [lakeResponse, damResponse, kdwpTempF] = await Promise.all([
                 axios.get(this.usgsBaseURL, { params: { format: 'json', sites: config.lakeStation, parameterCd: '62614,99067,00054', siteStatus: 'all' } }),
                 axios.get(this.usgsBaseURL, { params: { format: 'json', sites: config.damStation, parameterCd: '00010,00060', siteStatus: 'all' } }),
+                this.fetchKDWPLakeTemp(),
             ]);
 
             const lakeSeries = lakeResponse.data.value.timeSeries;
@@ -42,7 +67,13 @@ class LakeService {
             const storage = this.extractValue(lakeSeries, '00054');
             const waterTempC = this.extractValue(damSeries, '00010');
             const outflow = this.extractValue(damSeries, '00060');
-            const waterTempF = waterTempC ? Math.round((waterTempC.value * 9 / 5 + 32) * 10) / 10 : null;
+
+            // Prefer KDWP actual lake temperature, fall back to USGS dam station
+            const usgsTempF = waterTempC ? Math.round((waterTempC.value * 9 / 5 + 32) * 10) / 10 : null;
+            const waterTempF = kdwpTempF ?? usgsTempF;
+            const waterTempCFinal = kdwpTempF
+                ? Math.round((kdwpTempF - 32) * 5 / 9 * 10) / 10
+                : waterTempC?.value ?? null;
 
             const result = {
                 name: 'Kanopolis Lake',
@@ -50,8 +81,9 @@ class LakeService {
                 conservation_level: config.conservationLevel,
                 level_diff: levelDiff?.value ?? null,
                 storage_acre_ft: storage?.value ?? null,
-                water_temp_c: waterTempC?.value ?? null,
+                water_temp_c: waterTempCFinal,
                 water_temp_f: waterTempF,
+                water_temp_source: kdwpTempF ? 'kdwp' : (usgsTempF ? 'usgs' : null),
                 outflow_cfs: outflow?.value ?? null,
                 last_updated: elevation?.dateTime ?? damSeries?.[0]?.values?.[0]?.value?.[0]?.dateTime ?? null
             };

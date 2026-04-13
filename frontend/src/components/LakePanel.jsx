@@ -78,7 +78,7 @@ const LakePanel = ({ data }) => {
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-white">{data.name || 'Kanopolis Lake'}</h3>
-                            <p className="text-xs text-slate-500">USGS Real-time Data</p>
+                            <p className="text-xs text-slate-500">USGS & Corps of Engineers Data</p>
                         </div>
                     </div>
                     {data.last_updated && (
@@ -142,6 +142,9 @@ const LakePanel = ({ data }) => {
                         {data.water_temp_c != null && (
                             <p className="text-xs text-slate-500 mt-1">{data.water_temp_c}°C</p>
                         )}
+                        <p className="text-[10px] text-slate-600 mt-1">
+                            {data.water_temp_source === 'kdwp' ? 'Corps of Engineers' : data.water_temp_source === 'usgs' ? 'USGS Dam Station' : ''}
+                        </p>
                     </div>
 
                     {/* Dam Outflow */}
