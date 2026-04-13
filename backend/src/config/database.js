@@ -102,7 +102,7 @@ async function initializeDatabase() {
         predicted_elevation_24h REAL,
         predicted_elevation_48h REAL,
         predicted_elevation_72h REAL,
-        elevation_change_72h REAL,
+        elevation_change_120h REAL,
         trend TEXT,
         current_inflow_cfs REAL,
         current_outflow_cfs REAL,
@@ -114,6 +114,10 @@ async function initializeDatabase() {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_lake_forecast_generated ON lake_forecast(generated_at)
     `);
+
+    // Migrate: rename elevation_change_72h -> elevation_change_120h
+    await client.query(`ALTER TABLE lake_forecast RENAME COLUMN elevation_change_72h TO elevation_change_120h`).catch(() => {});
+    await client.query(`ALTER TABLE lake_forecast ADD COLUMN IF NOT EXISTS elevation_change_120h REAL`).catch(() => {});
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS lake_calibration (

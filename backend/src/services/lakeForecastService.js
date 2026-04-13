@@ -93,7 +93,7 @@ class LakeForecastService {
                     longitude: this.lakeCoords.lon,
                     hourly: 'precipitation',
                     precipitation_unit: 'inch',
-                    forecast_hours: 72,
+                    forecast_hours: 120,
                     timezone: 'America/Chicago',
                 },
                 timeout: 10000,
@@ -117,7 +117,7 @@ class LakeForecastService {
     }
 
     buildInflowTimeline(gaugeFlows, precipRunoff, nowMs, gauges, surgeThreshold) {
-        const hours = 72;
+        const hours = 120;
         const timeline = [];
 
         for (let h = 0; h < hours; h++) {
@@ -252,7 +252,9 @@ class LakeForecastService {
                 predicted_elevation_24h: forecastPoints[23]?.predicted_elevation ?? null,
                 predicted_elevation_48h: forecastPoints[47]?.predicted_elevation ?? null,
                 predicted_elevation_72h: forecastPoints[71]?.predicted_elevation ?? null,
-                elevation_change_72h: Math.round(elevationChange * 1000) / 1000,
+                predicted_elevation_96h: forecastPoints[95]?.predicted_elevation ?? null,
+                predicted_elevation_120h: forecastPoints[119]?.predicted_elevation ?? null,
+                elevation_change_120h: Math.round(elevationChange * 1000) / 1000,
                 trend,
                 current_inflow_cfs: Math.round(currentInflow * 100) / 100,
                 current_outflow_cfs: currentOutflow,
@@ -268,7 +270,7 @@ class LakeForecastService {
             this.cacheExpiry = Date.now() + this.cacheDuration;
 
             const calInfo = params.calibration.calibrated_at ? ` (calibrated, accuracy: ${((params.calibration.accuracy_score || 0) * 100).toFixed(0)}%)` : ' (using defaults)';
-            console.log(`[Lake Forecast] Generated — trend: ${trend}, 72h change: ${elevationChange > 0 ? '+' : ''}${elevationChange.toFixed(3)} ft, inflow: ${currentInflow} cfs${calInfo}`);
+            console.log(`[Lake Forecast] Generated — trend: ${trend}, 5-day change: ${elevationChange > 0 ? '+' : ''}${elevationChange.toFixed(3)} ft, inflow: ${currentInflow} cfs${calInfo}`);
             return result;
         } catch (error) {
             console.error('[Lake Forecast] Error generating forecast:', error.message);
@@ -282,11 +284,11 @@ class LakeForecastService {
 
         // Store a summary row per generation
         await pool.query(
-            `INSERT INTO lake_forecast (generated_at, current_elevation, predicted_elevation_24h, predicted_elevation_48h, predicted_elevation_72h, elevation_change_72h, trend, current_inflow_cfs, current_outflow_cfs, precip_total_inches) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+            `INSERT INTO lake_forecast (generated_at, current_elevation, predicted_elevation_24h, predicted_elevation_48h, predicted_elevation_72h, elevation_change_120h, trend, current_inflow_cfs, current_outflow_cfs, precip_total_inches) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
             [
                 forecast.generated_at, forecast.current_elevation,
                 forecast.predicted_elevation_24h, forecast.predicted_elevation_48h,
-                forecast.predicted_elevation_72h, forecast.elevation_change_72h,
+                forecast.predicted_elevation_72h, forecast.elevation_change_120h,
                 forecast.trend, forecast.current_inflow_cfs,
                 forecast.current_outflow_cfs, forecast.precip_total_inches,
             ]

@@ -231,7 +231,7 @@ const LakePanel = ({ data }) => {
                                 <BarChart3 className="w-4 h-4 text-violet-400" />
                             </div>
                             <div className="text-left">
-                                <h3 className="text-base font-bold text-white">72-Hour Lake Forecast</h3>
+                                <h3 className="text-base font-bold text-white">5-Day Lake Forecast</h3>
                                 <p className="text-[10px] text-slate-500">
                                     Based on {forecast.gauge_status?.length || 0} upstream gauges
                                     {forecast.generated_at && ` • ${new Date(forecast.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
@@ -253,34 +253,35 @@ const LakePanel = ({ data }) => {
                     {forecastOpen && (
                         <div className="mt-4">
                             {/* Key metrics row */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
                                 <div className="bg-dark-bg rounded-xl p-3 text-center">
                                     <p className="text-[10px] text-slate-500 mb-1">Now</p>
                                     <p className="text-lg font-bold text-white">{forecast.current_elevation?.toFixed(2)}</p>
                                     <p className="text-[10px] text-slate-500">ft</p>
                                 </div>
-                                <div className="bg-dark-bg rounded-xl p-3 text-center">
-                                    <p className="text-[10px] text-slate-500 mb-1">+24h</p>
-                                    <p className="text-lg font-bold text-white">{forecast.predicted_elevation_24h?.toFixed(2) ?? '--'}</p>
-                                    <p className="text-[10px] text-slate-500">ft</p>
-                                </div>
-                                <div className="bg-dark-bg rounded-xl p-3 text-center">
-                                    <p className="text-[10px] text-slate-500 mb-1">+48h</p>
-                                    <p className="text-lg font-bold text-white">{forecast.predicted_elevation_48h?.toFixed(2) ?? '--'}</p>
-                                    <p className="text-[10px] text-slate-500">ft</p>
-                                </div>
-                                <div className="bg-dark-bg rounded-xl p-3 text-center">
-                                    <p className="text-[10px] text-slate-500 mb-1">+72h</p>
-                                    <p className="text-lg font-bold text-violet-400">{forecast.predicted_elevation_72h?.toFixed(2) ?? '--'}</p>
-                                    <p className="text-[10px] text-slate-500">
-                                        {forecast.elevation_change_72h != null && (
-                                            <span className={forecast.elevation_change_72h > 0 ? 'text-amber-400' : forecast.elevation_change_72h < 0 ? 'text-blue-400' : 'text-emerald-400'}>
-                                                {forecast.elevation_change_72h > 0 ? '+' : ''}{forecast.elevation_change_72h.toFixed(3)} ft
-                                            </span>
-                                        )}
-                                    </p>
-                                </div>
+                                {[
+                                    { label: 'Day 1', key: 'predicted_elevation_24h' },
+                                    { label: 'Day 2', key: 'predicted_elevation_48h' },
+                                    { label: 'Day 3', key: 'predicted_elevation_72h' },
+                                    { label: 'Day 4', key: 'predicted_elevation_96h' },
+                                    { label: 'Day 5', key: 'predicted_elevation_120h', highlight: true },
+                                ].map(({ label, key, highlight }) => (
+                                    <div key={key} className="bg-dark-bg rounded-xl p-3 text-center">
+                                        <p className="text-[10px] text-slate-500 mb-1">{label}</p>
+                                        <p className={`text-lg font-bold ${highlight ? 'text-violet-400' : 'text-white'}`}>
+                                            {forecast[key]?.toFixed(2) ?? '--'}
+                                        </p>
+                                        <p className="text-[10px] text-slate-500">ft</p>
+                                    </div>
+                                ))}
                             </div>
+                            {forecast.elevation_change_120h != null && (
+                                <p className="text-xs text-center mb-4">
+                                    <span className={`font-semibold ${forecast.elevation_change_120h > 0 ? 'text-amber-400' : forecast.elevation_change_120h < 0 ? 'text-blue-400' : 'text-emerald-400'}`}>
+                                        {forecast.elevation_change_120h > 0 ? '+' : ''}{forecast.elevation_change_120h.toFixed(3)} ft over 5 days
+                                    </span>
+                                </p>
+                            )}
 
                             {/* Forecast elevation chart */}
                             {forecast.forecast_points?.length > 0 && (
@@ -290,7 +291,7 @@ const LakePanel = ({ data }) => {
                                         <AreaChart data={forecast.forecast_points.map(p => ({
                                             ...p,
                                             time: `+${p.hour}h`,
-                                            label: p.hour % 12 === 0 ? `+${p.hour}h` : '',
+                                            label: p.hour % 24 === 0 ? `Day ${p.hour / 24}` : '',
                                         }))}>
                                             <defs>
                                                 <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
@@ -298,7 +299,7 @@ const LakePanel = ({ data }) => {
                                                     <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
-                                            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} interval={11} />
+                                            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} interval={23} />
                                             <YAxis domain={['dataMin - 0.05', 'dataMax + 0.05']} tick={{ fontSize: 10, fill: '#64748b' }} width={55} />
                                             <Tooltip
                                                 {...chartTooltipStyle}
@@ -348,7 +349,7 @@ const LakePanel = ({ data }) => {
 
                             {/* Confidence note */}
                             <p className="text-[10px] text-slate-600 mt-3 text-center">
-                                Confidence: High (0-12h) / Medium (12-36h) / Low (36-72h)
+                                Confidence: High (0-24h) / Medium (1-3 days) / Low (3-5 days)
                                 {forecast.precip_total_inches > 0 && ` • ${forecast.precip_total_inches.toFixed(2)}" rain forecast`}
                                 {forecast.calibration?.calibrated_at
                                     ? ` • Self-calibrated model (${((forecast.calibration.accuracy_score || 0) * 100).toFixed(0)}% accuracy, ${forecast.calibration.data_points} data points)`

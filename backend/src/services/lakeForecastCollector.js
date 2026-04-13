@@ -29,7 +29,7 @@ class LakeForecastCollector {
             const forecast = await this.forecastService.generateForecast();
             if (forecast) {
                 await this.forecastService.saveForecast(forecast);
-                console.log(`[Lake Forecast Collector] Forecast saved — trend: ${forecast.trend}, 72h: ${forecast.elevation_change_72h > 0 ? '+' : ''}${forecast.elevation_change_72h} ft`);
+                console.log(`[Lake Forecast Collector] Forecast saved — trend: ${forecast.trend}, 5-day: ${forecast.elevation_change_120h > 0 ? '+' : ''}${forecast.elevation_change_120h} ft`);
             }
         } catch (error) {
             console.error('[Lake Forecast Collector] Error:', error.message);
