@@ -317,7 +317,7 @@ const LakePanel = ({ data }) => {
                                 <div>
                                     <p className="text-xs font-medium text-slate-400 mb-2">Upstream Gauge Network</p>
                                     <div className="space-y-1.5">
-                                        {forecast.gauge_status.filter(g => !g.is_terminal || g.flow_cfs > 0).map(g => (
+                                        {forecast.gauge_status.map(g => (
                                             <div key={g.id} className="flex items-center justify-between bg-dark-bg rounded-lg px-3 py-2">
                                                 <div className="flex items-center gap-2">
                                                     <div className={`w-1.5 h-1.5 rounded-full ${g.is_terminal ? 'bg-violet-400' : 'bg-slate-500'}`} />

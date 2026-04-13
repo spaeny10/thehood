@@ -60,7 +60,7 @@ class LakeForecastService {
 
     async fetchAllGaugeFlows() {
         try {
-            const siteIds = this.gauges.map(g => g.id).join(',');
+            const siteIds = this.defaultGauges.map(g => g.id).join(',');
             const response = await axios.get(this.usgsBaseURL, {
                 params: { format: 'json', sites: siteIds, parameterCd: '00060', siteStatus: 'all' },
                 timeout: 15000,
