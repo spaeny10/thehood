@@ -82,6 +82,18 @@ async function initializeDatabase() {
       `).catch(() => {});
     }
 
+    // One-time: clear old water temp data (was USGS dam outflow, now KDWP lake temp)
+    await client.query(`
+      UPDATE lake_data SET water_temp_c = NULL, water_temp_f = NULL
+      WHERE water_temp_c IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM settings WHERE key = 'lake_temp_migrated')
+    `).catch(() => {});
+    await client.query(`
+      INSERT INTO settings (key, value, description, category)
+      VALUES ('lake_temp_migrated', 'true', 'Old dam temp data cleared', 'migration')
+      ON CONFLICT (key) DO NOTHING
+    `).catch(() => {});
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS lake_forecast (
         id SERIAL PRIMARY KEY,
