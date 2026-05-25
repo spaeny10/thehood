@@ -72,6 +72,11 @@ const tools = [
     name: 'get_fishing_report',
     description: 'Get the current KDWP fishing report for Kanopolis Reservoir including species, ratings, sizes, and recommended baits/methods.',
     input_schema: { type: 'object', properties: {}, required: [] }
+  },
+  {
+    name: 'get_rain_summary',
+    description: 'Get accurate rainfall totals. Returns today\'s rain so far, yesterday\'s total, and last 10 days total. ALWAYS use this tool for any rain/precipitation questions instead of trying to calculate from weather history.',
+    input_schema: { type: 'object', properties: {}, required: [] }
   }
 ];
 
@@ -192,6 +197,51 @@ async function handleGetFishingReport() {
   return await fishingService.getReport();
 }
 
+async function handleGetRainSummary() {
+  // Today's rain from latest reading
+  const { rows: currentRows } = await pool.query(
+    'SELECT rain_hourly, rain_daily, rain_weekly, rain_monthly, rain_total FROM weather_data ORDER BY timestamp DESC LIMIT 1'
+  );
+
+  // Yesterday: max rain_daily from yesterday's readings (station resets daily)
+  const yesterdayStart = new Date();
+  yesterdayStart.setHours(0, 0, 0, 0);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+  const yesterdayEnd = new Date();
+  yesterdayEnd.setHours(0, 0, 0, 0);
+
+  const { rows: yesterdayRows } = await pool.query(
+    'SELECT MAX(rain_daily) as total FROM weather_data WHERE timestamp >= $1 AND timestamp < $2',
+    [yesterdayStart.getTime(), yesterdayEnd.getTime()]
+  );
+
+  // Last 10 days: sum of each day's max rain_daily
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setHours(0, 0, 0, 0);
+  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
+  const { rows: tenDayRows } = await pool.query(`
+    SELECT SUM(daily_max) as total FROM (
+      SELECT MAX(rain_daily) as daily_max
+      FROM weather_data
+      WHERE timestamp >= $1
+      GROUP BY DATE(to_timestamp(timestamp / 1000) AT TIME ZONE 'America/Chicago')
+    ) daily_totals
+  `, [tenDaysAgo.getTime()]);
+
+  const current = currentRows[0] || {};
+  return {
+    today: parseFloat(current.rain_daily) || 0,
+    current_rate_per_hour: parseFloat(current.rain_hourly) || 0,
+    this_week: parseFloat(current.rain_weekly) || 0,
+    this_month: parseFloat(current.rain_monthly) || 0,
+    all_time_total: parseFloat(current.rain_total) || 0,
+    yesterday: parseFloat(yesterdayRows[0]?.total) || 0,
+    last_10_days: parseFloat(tenDayRows[0]?.total) || 0,
+    unit: 'inches'
+  };
+}
+
 // --- Route tool calls to handlers ---
 
 async function executeTool(name, input) {
@@ -204,6 +254,7 @@ async function executeTool(name, input) {
     case 'get_discussions':       return await handleGetDiscussions(input);
     case 'get_upcoming_events':   return await handleGetUpcomingEvents();
     case 'get_fishing_report':    return await handleGetFishingReport();
+    case 'get_rain_summary':      return await handleGetRainSummary();
     default:                      return { error: `Unknown tool: ${name}` };
   }
 }
@@ -282,6 +333,7 @@ IMPORTANT RULES:
     get_discussions: 'Community Board',
     get_upcoming_events: 'Events Calendar',
     get_fishing_report: 'KDWP Fishing Report',
+    get_rain_summary: 'Weather Station',
   };
 
   return {
