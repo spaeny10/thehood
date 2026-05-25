@@ -25,6 +25,7 @@ function AppContent() {
   const [historicalData, setHistoricalData] = useState([]);
   const [forecast, setForecast] = useState(null);
   const [lakeData, setLakeData] = useState(null);
+  const [rainSummary, setRainSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,7 +67,7 @@ function AppContent() {
     try {
       setLoading(true);
 
-      const [currentResponse, forecastResponse, lakeResponse] = await Promise.all([
+      const [currentResponse, forecastResponse, lakeResponse, rainResponse] = await Promise.all([
         weatherApi.getCurrent(),
         forecastApi.get().catch(err => {
           console.error('Error fetching forecast:', err);
@@ -75,12 +76,17 @@ function AppContent() {
         lakeApi.get().catch(err => {
           console.error('Error fetching lake data:', err);
           return null;
+        }),
+        weatherApi.getRainSummary().catch(err => {
+          console.error('Error fetching rain summary:', err);
+          return null;
         })
       ]);
 
       setCurrentWeather(currentResponse.data);
       if (forecastResponse) setForecast(forecastResponse.data);
       if (lakeResponse) setLakeData(lakeResponse.data);
+      if (rainResponse) setRainSummary(rainResponse.data);
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Error fetching weather data:', error);
@@ -361,7 +367,7 @@ function AppContent() {
                     <p className="text-slate-400">Loading weather data...</p>
                   </div>
                 ) : (
-                  <CurrentWeather data={currentWeather} sunMoonData={sunMoonData} />
+                  <CurrentWeather data={currentWeather} sunMoonData={sunMoonData} rainSummary={rainSummary} />
                 )}
               </div>
               <div className="w-full lg:w-[380px] shrink-0">

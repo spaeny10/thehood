@@ -32,6 +32,7 @@ export const weatherApi = {
     api.get('/weather/historical', { params: { hours, limit } }),
   getStats: (hours = 24) =>
     api.get('/weather/stats', { params: { hours } }),
+  getRainSummary: () => api.get('/weather/rain-summary'),
   getDevices: () => api.get('/weather/devices'),
 };
 

@@ -63,4 +63,43 @@ const getDevices = async (req, res) => {
   }
 };
 
-module.exports = { getCurrentWeather, getHistoricalWeather, getWeatherStats, getDevices };
+const getRainSummary = async (req, res) => {
+  try {
+    // Yesterday: get max rain_daily from yesterday's readings
+    // rain_daily resets to 0 each day, so the max value = that day's total
+    const yesterdayStart = new Date();
+    yesterdayStart.setHours(0, 0, 0, 0);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    const yesterdayEnd = new Date();
+    yesterdayEnd.setHours(0, 0, 0, 0);
+
+    const { rows: yesterdayRows } = await pool.query(
+      'SELECT MAX(rain_daily) as total FROM weather_data WHERE timestamp >= $1 AND timestamp < $2',
+      [yesterdayStart.getTime(), yesterdayEnd.getTime()]
+    );
+
+    // Last 10 days: get max rain_daily per calendar day, then sum them
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setHours(0, 0, 0, 0);
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
+    const { rows: tenDayRows } = await pool.query(`
+      SELECT SUM(daily_max) as total FROM (
+        SELECT MAX(rain_daily) as daily_max
+        FROM weather_data
+        WHERE timestamp >= $1
+        GROUP BY DATE(to_timestamp(timestamp / 1000) AT TIME ZONE 'America/Chicago')
+      ) daily_totals
+    `, [tenDaysAgo.getTime()]);
+
+    res.json({
+      yesterday: parseFloat(yesterdayRows[0]?.total) || 0,
+      last_10_days: parseFloat(tenDayRows[0]?.total) || 0,
+    });
+  } catch (error) {
+    console.error('Error getting rain summary:', error);
+    res.status(500).json({ error: 'Failed to fetch rain summary' });
+  }
+};
+
+module.exports = { getCurrentWeather, getHistoricalWeather, getWeatherStats, getDevices, getRainSummary };

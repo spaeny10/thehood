@@ -16,7 +16,7 @@ const ConditionRow = ({ icon: Icon, iconColor, label, sublabel, value }) => (
   </div>
 );
 
-const CurrentWeather = ({ data, sunMoonData }) => {
+const CurrentWeather = ({ data, sunMoonData, rainSummary }) => {
   if (!data) {
     return (
       <div className="card">
@@ -45,13 +45,33 @@ const CurrentWeather = ({ data, sunMoonData }) => {
 
       {/* Condition Rows */}
       <div className="mt-2">
-        <ConditionRow
-          icon={CloudRain}
-          iconColor="#38bdf8"
-          label="Rain"
-          sublabel={`Daily: ${formatRain(data.rain_daily)} · Monthly: ${formatRain(data.rain_monthly)}`}
-          value={formatRain(data.rain_hourly) + '/hr'}
-        />
+        {/* Rain Section — expanded */}
+        <div className="py-3 border-b border-dark-border/40">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#38bdf815' }}>
+                <CloudRain className="w-5 h-5" style={{ color: '#38bdf8' }} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-200">Today's Rainfall</p>
+                <p className="text-[10px] text-slate-500">{formatRain(data.rain_hourly)}/hr current rate</p>
+              </div>
+            </div>
+            <p className="text-base font-bold text-white">{formatRain(data.rain_daily)}</p>
+          </div>
+          {/* Yesterday + Last 10 Days sub-row */}
+          <div className="flex gap-4 mt-2.5 ml-[52px]">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-slate-500">Yesterday</span>
+              <span className="text-xs font-semibold text-slate-300">{rainSummary ? formatRain(rainSummary.yesterday) : '--'}</span>
+            </div>
+            <div className="w-px h-3 bg-dark-border/60 self-center" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-slate-500">Last 10 Days</span>
+              <span className="text-xs font-semibold text-slate-300">{rainSummary ? formatRain(rainSummary.last_10_days) : '--'}</span>
+            </div>
+          </div>
+        </div>
         <ConditionRow
           icon={Wind}
           iconColor="#a78bfa"
