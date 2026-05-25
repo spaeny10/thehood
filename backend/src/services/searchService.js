@@ -75,8 +75,14 @@ const tools = [
   },
   {
     name: 'get_rain_summary',
-    description: 'Get accurate rainfall totals. Returns today\'s rain so far, yesterday\'s total, and last 10 days total. ALWAYS use this tool for any rain/precipitation questions instead of trying to calculate from weather history.',
-    input_schema: { type: 'object', properties: {}, required: [] }
+    description: 'Get accurate rainfall totals and daily breakdown. Returns today\'s rain, yesterday\'s total, last 10 days total, and a day-by-day breakdown for the requested period. ALWAYS use this tool for any rain/precipitation questions instead of trying to calculate from weather history.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        days_back: { type: 'number', description: 'Number of days of daily breakdown to include. Default 10. Use 30-31 for monthly questions, 7 for weekly.' }
+      },
+      required: []
+    }
   }
 ];
 
@@ -197,7 +203,9 @@ async function handleGetFishingReport() {
   return await fishingService.getReport();
 }
 
-async function handleGetRainSummary() {
+async function handleGetRainSummary(input) {
+  const daysBack = Math.min(Math.max(input.days_back || 10, 1), 90);
+
   // Today's rain from latest reading
   const { rows: currentRows } = await pool.query(
     'SELECT rain_hourly, rain_daily, rain_weekly, rain_monthly, rain_total FROM weather_data ORDER BY timestamp DESC LIMIT 1'
@@ -215,19 +223,22 @@ async function handleGetRainSummary() {
     [yesterdayStart.getTime(), yesterdayEnd.getTime()]
   );
 
-  // Last 10 days: sum of each day's max rain_daily
-  const tenDaysAgo = new Date();
-  tenDaysAgo.setHours(0, 0, 0, 0);
-  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+  // Daily breakdown: max rain_daily per calendar day for the requested period
+  const periodStart = new Date();
+  periodStart.setHours(0, 0, 0, 0);
+  periodStart.setDate(periodStart.getDate() - daysBack);
 
-  const { rows: tenDayRows } = await pool.query(`
-    SELECT SUM(daily_max) as total FROM (
-      SELECT MAX(rain_daily) as daily_max
-      FROM weather_data
-      WHERE timestamp >= $1
-      GROUP BY DATE(to_timestamp(timestamp / 1000) AT TIME ZONE 'America/Chicago')
-    ) daily_totals
-  `, [tenDaysAgo.getTime()]);
+  const { rows: dailyRows } = await pool.query(`
+    SELECT
+      DATE(to_timestamp(timestamp / 1000) AT TIME ZONE 'America/Chicago') as date,
+      MAX(rain_daily) as rain_inches
+    FROM weather_data
+    WHERE timestamp >= $1
+    GROUP BY DATE(to_timestamp(timestamp / 1000) AT TIME ZONE 'America/Chicago')
+    ORDER BY date DESC
+  `, [periodStart.getTime()]);
+
+  const periodTotal = dailyRows.reduce((sum, r) => sum + (parseFloat(r.rain_inches) || 0), 0);
 
   const current = currentRows[0] || {};
   return {
@@ -237,7 +248,12 @@ async function handleGetRainSummary() {
     this_month: parseFloat(current.rain_monthly) || 0,
     all_time_total: parseFloat(current.rain_total) || 0,
     yesterday: parseFloat(yesterdayRows[0]?.total) || 0,
-    last_10_days: parseFloat(tenDayRows[0]?.total) || 0,
+    period_total: Math.round(periodTotal * 100) / 100,
+    period_days: daysBack,
+    daily_breakdown: dailyRows.map(r => ({
+      date: r.date,
+      rain_inches: parseFloat(r.rain_inches) || 0
+    })),
     unit: 'inches'
   };
 }
@@ -254,7 +270,7 @@ async function executeTool(name, input) {
     case 'get_discussions':       return await handleGetDiscussions(input);
     case 'get_upcoming_events':   return await handleGetUpcomingEvents();
     case 'get_fishing_report':    return await handleGetFishingReport();
-    case 'get_rain_summary':      return await handleGetRainSummary();
+    case 'get_rain_summary':      return await handleGetRainSummary(input);
     default:                      return { error: `Unknown tool: ${name}` };
   }
 }
