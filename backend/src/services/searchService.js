@@ -13,12 +13,12 @@ const tools = [
   },
   {
     name: 'get_weather_history',
-    description: 'Get historical weather data for a specified time period. Returns timestamped readings with temperature, humidity, wind, rain, etc. Use this for questions about past weather, trends, records, averages, or comparisons.',
+    description: 'Get historical weather data for a specified time period. Returns timestamped readings with temperature, humidity, wind, rain, etc. Use this for questions about past weather, trends, records, averages, or comparisons. IMPORTANT: For rain totals, the summary mode returns the station\'s built-in running totals (rain_daily, rain_weekly, rain_monthly) from the most recent reading — do NOT try to sum rain_hourly readings.',
     input_schema: {
       type: 'object',
       properties: {
         hours_ago: { type: 'number', description: 'How many hours of history to retrieve. E.g., 24 for last day, 168 for last week, 720 for last month.' },
-        stat_type: { type: 'string', enum: ['raw', 'summary'], description: 'raw returns individual readings (limited to 50), summary returns min/max/avg aggregations' }
+        stat_type: { type: 'string', enum: ['raw', 'summary'], description: 'raw returns individual readings (limited to 50), summary returns min/max/avg aggregations plus rain running totals' }
       },
       required: ['hours_ago']
     }
@@ -88,17 +88,34 @@ async function handleGetWeatherHistory(input) {
   const since = Date.now() - hours_ago * 3600000;
 
   if (stat_type === 'summary') {
-    const { rows } = await pool.query(`
+    // Get temperature, wind, pressure aggregations
+    const { rows: statsRows } = await pool.query(`
       SELECT
         MIN(outdoor_temp) as min_temp, MAX(outdoor_temp) as max_temp,
         ROUND(AVG(outdoor_temp)::numeric, 1) as avg_temp,
         MAX(wind_speed) as max_wind, MAX(wind_gust) as max_gust,
-        SUM(rain_hourly) as total_rain,
         MIN(pressure) as min_pressure, MAX(pressure) as max_pressure,
-        MAX(uv_index) as max_uv
+        MAX(uv_index) as max_uv,
+        COUNT(*) as reading_count
       FROM weather_data WHERE timestamp >= $1
     `, [since]);
-    return rows[0] || { error: 'No data for that period' };
+
+    // Get rain running totals from the latest reading (station maintains these)
+    const { rows: rainRows } = await pool.query(
+      'SELECT rain_hourly, rain_daily, rain_weekly, rain_monthly, rain_total FROM weather_data ORDER BY timestamp DESC LIMIT 1'
+    );
+
+    const stats = statsRows[0] || { error: 'No data for that period' };
+    const rain = rainRows[0] || {};
+    return {
+      ...stats,
+      current_rain_hourly: rain.rain_hourly,
+      current_rain_daily: rain.rain_daily,
+      current_rain_weekly: rain.rain_weekly,
+      current_rain_monthly: rain.rain_monthly,
+      current_rain_total: rain.rain_total,
+      note: 'Rain values (daily/weekly/monthly/total) are running totals from the weather station, not sums of readings.'
+    };
   }
 
   const { rows } = await pool.query(
