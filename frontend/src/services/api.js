@@ -106,6 +106,11 @@ export const eventsApi = {
   delete: (id) => api.delete(`/events/${id}`),
 };
 
+// Search API calls
+export const searchApi = {
+  query: (q) => api.post('/search', { query: q }),
+};
+
 // Health check
 export const healthCheck = () => api.get('/health');
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cloud, RefreshCw, Settings, Map, MessageCircle, LogIn, X, UserPlus, Menu, ChevronDown, TrendingUp, Calendar } from 'lucide-react';
+import { Cloud, RefreshCw, Settings, Map, MessageCircle, LogIn, X, UserPlus, Menu, ChevronDown, TrendingUp, Calendar, Search } from 'lucide-react';
 import { CurrentWeather } from './components/WeatherCard';
 import WeatherChart from './components/WeatherChart';
 import AlertsPanel from './components/AlertsPanel';
@@ -8,6 +8,7 @@ import LakePanel from './components/LakePanel';
 import AdminPage from './components/AdminPage';
 import CourtMap from './components/CourtMap';
 import DiscussPage from './components/DiscussPage';
+import SearchPanel from './components/SearchPanel';
 import NWSAlertBanner from './components/NWSAlertBanner';
 import EventCalendar from './components/EventCalendar';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -115,6 +116,11 @@ function AppContent() {
     return <DiscussPage onNavigate={setPage} />;
   }
 
+  // Search page
+  if (page === 'search') {
+    return <SearchPanel onNavigate={setPage} />;
+  }
+
   // Events page
   if (page === 'events') {
     return (
@@ -163,6 +169,9 @@ function AppContent() {
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
+              </button>
+              <button onClick={() => setPage('search')} className="w-10 h-10 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 flex items-center justify-center transition-colors" title="AI Search">
+                <Search className="w-4.5 h-4.5 text-amber-400" />
               </button>
               <button onClick={() => setPage('map')} className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-dark-border flex items-center justify-center transition-colors" title="Court Map">
                 <Map className="w-4.5 h-4.5 text-slate-400" />
@@ -215,6 +224,10 @@ function AppContent() {
           {/* Mobile dropdown menu */}
           {mobileMenuOpen && (
             <div className="md:hidden mt-3 pt-3 border-t border-dark-border/50 space-y-2">
+              <button onClick={() => { setPage('search'); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-500/10 transition-colors text-left">
+                <Search className="w-4 h-4 text-amber-400" /> <span className="text-sm text-amber-400 font-medium">AI Search</span>
+              </button>
               <button onClick={() => { setPage('map'); setMobileMenuOpen(false); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800/50 transition-colors text-left">
                 <Map className="w-4 h-4 text-slate-400" /> <span className="text-sm text-slate-300">Court Map</span>
