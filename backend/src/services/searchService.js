@@ -2,7 +2,13 @@ const Anthropic = require('@anthropic-ai/sdk').default;
 const { pool } = require('../config/database');
 const FishingReportService = require('./fishingReportService');
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+let _client = null;
+function getClient() {
+  if (!_client) {
+    _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+  return _client;
+}
 const fishingService = new FishingReportService();
 
 const tools = [
@@ -298,7 +304,7 @@ IMPORTANT RULES:
   // Tool use loop (max 5 rounds)
   let response;
   for (let round = 0; round < 5; round++) {
-    response = await client.messages.create({
+    response = await getClient().messages.create({
       model: 'claude-opus-4-20250514',
       max_tokens: 1024,
       system: systemPrompt,

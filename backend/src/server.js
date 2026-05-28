@@ -31,7 +31,12 @@ const authRoutes = require('./routes/authRoutes');
 const fishingRoutes = require('./routes/fishingRoutes');
 const communityRoutes = require('./routes/communityRoutes');
 const eventsRoutes = require('./routes/eventsRoutes');
-const searchRoutes = require('./routes/searchRoutes');
+let searchRoutes;
+try {
+  searchRoutes = require('./routes/searchRoutes');
+} catch (e) {
+  console.error('[Boot] Search routes failed to load:', e.message);
+}
 console.log('[Boot] Routes loaded');
 
 try {
@@ -73,7 +78,7 @@ app.use('/api/fishing', fishingRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/search', searchRoutes);
+if (searchRoutes) app.use('/api/search', searchRoutes);
 
 // Initialize services
 const dataCollector = new DataCollectorService();
