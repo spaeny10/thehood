@@ -13,6 +13,19 @@ const pool = new Pool({
 /* ─── initialise schema ─── */
 async function initializeDatabase() {
   const client = await pool.connect();
+
+  // Helper: attempt a migration query inside a SAVEPOINT so failures
+  // don't abort the entire transaction (PostgreSQL requirement)
+  async function tryQuery(sql) {
+    await client.query('SAVEPOINT migration_attempt');
+    try {
+      await client.query(sql);
+      await client.query('RELEASE SAVEPOINT migration_attempt');
+    } catch {
+      await client.query('ROLLBACK TO SAVEPOINT migration_attempt');
+    }
+  }
+
   try {
     await client.query('BEGIN');
 
@@ -77,22 +90,19 @@ async function initializeDatabase() {
       ['surface_wind_mph', 'REAL'],
       ['surface_wind_dir', 'INTEGER'],
     ]) {
-      await client.query(`
-        ALTER TABLE lake_data ADD COLUMN IF NOT EXISTS ${col[0]} ${col[1]}
-      `).catch(() => {});
+      await tryQuery(`ALTER TABLE lake_data ADD COLUMN IF NOT EXISTS ${col[0]} ${col[1]}`);
     }
 
-    // One-time: clear old water temp data (was USGS dam outflow, now KDWP lake temp)
-    await client.query(`
+    await tryQuery(`
       UPDATE lake_data SET water_temp_c = NULL, water_temp_f = NULL
       WHERE water_temp_c IS NOT NULL
       AND NOT EXISTS (SELECT 1 FROM settings WHERE key = 'lake_temp_migrated')
-    `).catch(() => {});
-    await client.query(`
+    `);
+    await tryQuery(`
       INSERT INTO settings (key, value, description, category)
       VALUES ('lake_temp_migrated', 'true', 'Old dam temp data cleared', 'migration')
       ON CONFLICT (key) DO NOTHING
-    `).catch(() => {});
+    `);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS lake_forecast (
@@ -116,8 +126,8 @@ async function initializeDatabase() {
     `);
 
     // Migrate: rename elevation_change_72h -> elevation_change_120h
-    await client.query(`ALTER TABLE lake_forecast RENAME COLUMN elevation_change_72h TO elevation_change_120h`).catch(() => {});
-    await client.query(`ALTER TABLE lake_forecast ADD COLUMN IF NOT EXISTS elevation_change_120h REAL`).catch(() => {});
+    await tryQuery(`ALTER TABLE lake_forecast RENAME COLUMN elevation_change_72h TO elevation_change_120h`);
+    await tryQuery(`ALTER TABLE lake_forecast ADD COLUMN IF NOT EXISTS elevation_change_120h REAL`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS lake_calibration (
