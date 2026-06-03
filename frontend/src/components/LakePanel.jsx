@@ -117,7 +117,7 @@ const LakePanel = ({ data }) => {
                                 <span className="text-xs font-medium text-slate-400">Pool Elevation</span>
                             </div>
                             <span className="text-2xl font-bold text-white">
-                                {data.elevation?.toFixed(2) ?? '--'}
+                                {data.elevation?.toFixed(1) ?? '--'}
                                 <span className="text-xs text-slate-500 ml-1">ft</span>
                             </span>
                         </div>
@@ -138,7 +138,7 @@ const LakePanel = ({ data }) => {
                         <div className="flex justify-between items-center text-xs">
                             <span className={`font-semibold ${isBelow ? 'text-amber-400' : isAbove ? 'text-cyan-400' : 'text-emerald-400'}`}>
                                 {diffAbs != null
-                                    ? `${diffAbs.toFixed(2)} ft ${isBelow ? 'below' : isAbove ? 'above' : 'at'} conservation`
+                                    ? `${diffAbs.toFixed(1)} ft ${isBelow ? 'below' : isAbove ? 'above' : 'at'} conservation`
                                     : '--'}
                             </span>
                             <span className="text-slate-500">
@@ -148,7 +148,7 @@ const LakePanel = ({ data }) => {
                         {isSummer && summerDiffAbs != null && (
                             <div className="mt-2 text-xs">
                                 <span className={`font-semibold ${summerDiff < 0 ? 'text-amber-400' : summerDiff > 0 ? 'text-cyan-400' : 'text-emerald-400'}`}>
-                                    {summerDiffAbs.toFixed(2)} ft {summerDiff < 0 ? 'below' : summerDiff > 0 ? 'above' : 'at'} summer pool
+                                    {summerDiffAbs.toFixed(1)} ft {summerDiff < 0 ? 'below' : summerDiff > 0 ? 'above' : 'at'} summer pool
                                 </span>
                                 <span className="text-slate-500 ml-2">Summer Pool: {summerPool} ft</span>
                             </div>
@@ -197,7 +197,7 @@ const LakePanel = ({ data }) => {
                             <span className="text-xs font-medium text-slate-400">Inflow</span>
                         </div>
                         <p className="text-2xl font-bold text-white">
-                            {data.inflow_cfs != null ? Math.round(data.inflow_cfs * 100) / 100 : '--'}
+                            {data.inflow_cfs != null ? Math.round(data.inflow_cfs) : '--'}
                             <span className="text-xs text-slate-500 ml-1">cfs</span>
                         </p>
                         <p className="text-[10px] text-slate-600 mt-1">Corps of Engineers</p>
@@ -256,7 +256,7 @@ const LakePanel = ({ data }) => {
                             <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
                                 <div className="bg-dark-bg rounded-xl p-3 text-center">
                                     <p className="text-[10px] text-slate-500 mb-1">Now</p>
-                                    <p className="text-lg font-bold text-white">{forecast.current_elevation?.toFixed(2)}</p>
+                                    <p className="text-lg font-bold text-white">{forecast.current_elevation?.toFixed(1)}</p>
                                     <p className="text-[10px] text-slate-500">ft</p>
                                 </div>
                                 {[
@@ -269,7 +269,7 @@ const LakePanel = ({ data }) => {
                                     <div key={key} className="bg-dark-bg rounded-xl p-3 text-center">
                                         <p className="text-[10px] text-slate-500 mb-1">{label}</p>
                                         <p className={`text-lg font-bold ${highlight ? 'text-violet-400' : 'text-white'}`}>
-                                            {forecast[key]?.toFixed(2) ?? '--'}
+                                            {forecast[key]?.toFixed(1) ?? '--'}
                                         </p>
                                         <p className="text-[10px] text-slate-500">ft</p>
                                     </div>
@@ -278,7 +278,7 @@ const LakePanel = ({ data }) => {
                             {forecast.elevation_change_120h != null && (
                                 <p className="text-xs text-center mb-4">
                                     <span className={`font-semibold ${forecast.elevation_change_120h > 0 ? 'text-amber-400' : forecast.elevation_change_120h < 0 ? 'text-blue-400' : 'text-emerald-400'}`}>
-                                        {forecast.elevation_change_120h > 0 ? '+' : ''}{forecast.elevation_change_120h.toFixed(3)} ft over 5 days
+                                        {forecast.elevation_change_120h > 0 ? '+' : ''}{forecast.elevation_change_120h.toFixed(1)} ft over 5 days
                                     </span>
                                 </p>
                             )}
@@ -304,7 +304,7 @@ const LakePanel = ({ data }) => {
                                             <Tooltip
                                                 {...chartTooltipStyle}
                                                 labelFormatter={(_, payload) => payload?.[0]?.payload?.time || ''}
-                                                formatter={(v) => [`${Number(v).toFixed(3)} ft`, 'Elevation']}
+                                                formatter={(v) => [`${Number(v).toFixed(1)} ft`, 'Elevation']}
                                             />
                                             <ReferenceLine y={forecast.conservation_level} stroke="#64748b" strokeDasharray="4 4" label={{ value: 'Conservation', fill: '#64748b', fontSize: 10, position: 'left' }} />
                                             <Area type="monotone" dataKey="predicted_elevation" stroke="#8b5cf6" fill="url(#forecastGrad)" strokeWidth={2} dot={false} />
@@ -350,7 +350,7 @@ const LakePanel = ({ data }) => {
                             {/* Confidence note */}
                             <p className="text-[10px] text-slate-600 mt-3 text-center">
                                 Confidence: High (0-24h) / Medium (1-3 days) / Low (3-5 days)
-                                {forecast.precip_total_inches > 0 && ` • ${forecast.precip_total_inches.toFixed(2)}" rain forecast`}
+                                {forecast.precip_total_inches > 0 && ` • ${forecast.precip_total_inches.toFixed(1)}" rain forecast`}
                                 {forecast.calibration?.calibrated_at
                                     ? ` • Self-calibrated model (${((forecast.calibration.accuracy_score || 0) * 100).toFixed(0)}% accuracy, ${forecast.calibration.data_points} data points)`
                                     : ' • Using default parameters (calibrating after 2 weeks of data)'}
@@ -398,7 +398,7 @@ const LakePanel = ({ data }) => {
                                             </defs>
                                             <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
                                             <YAxis domain={['dataMin - 0.1', 'dataMax + 0.1']} tick={{ fontSize: 10, fill: '#64748b' }} width={55} />
-                                            <Tooltip {...chartTooltipStyle} formatter={(v) => [`${Number(v).toFixed(2)} ft`, 'Elevation']} />
+                                            <Tooltip {...chartTooltipStyle} formatter={(v) => [`${Number(v).toFixed(1)} ft`, 'Elevation']} />
                                             <Area type="monotone" dataKey="elevation" stroke="#06b6d4" fill="url(#elevGrad)" strokeWidth={2} dot={false} />
                                         </AreaChart>
                                     </ResponsiveContainer>

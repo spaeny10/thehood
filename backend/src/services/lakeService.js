@@ -6,7 +6,7 @@ class LakeService {
     constructor() {
         this.usgsBaseURL = 'https://waterservices.usgs.gov/nwis/iv/';
         this.cwmsBaseURL = 'https://cwms-data.usace.army.mil/cwms-data';
-        this.kdwpURL = 'https://ksoutdoors.gov/Fishing/Where-to-Fish-in-Kansas/Fishing-Locations-Public-Waters/Fishing-in-Northwest-Kansas/Kanopolis-Reservoir';
+        this.kdwpURL = 'https://ksoutdoors.gov/outdoor-activities/fishing-in-kansas/where-to-fish';
         this.openMeteoURL = 'https://api.open-meteo.com/v1/forecast';
         this.lakeCoords = { lat: 38.617, lon: -97.968 };
         this.cache = null;
@@ -32,16 +32,33 @@ class LakeService {
     async fetchKDWPLakeTemp() {
         try {
             const response = await axios.get(this.kdwpURL, {
-                headers: { 'User-Agent': 'Kanopolanes Weather Dashboard' },
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                },
                 timeout: 15000,
             });
             const html = response.data;
-            const match = html.match(/<strong>Lake Temperature:<\/strong><\/div>\s*<div class="field-text">\s*([\d.]+)\s*F/i);
-            if (match) {
-                const tempF = parseFloat(match[1]);
-                if (!isNaN(tempF) && tempF > 0 && tempF < 120) {
-                    console.log(`[Lake Service] KDWP lake temperature: ${tempF}°F`);
-                    return tempF;
+            // Try multiple patterns to find lake temperature
+            const patterns = [
+                /<strong>Lake Temperature:<\/strong><\/div>\s*<div class="field-text">\s*([\d.]+)\s*F/i,
+                /Lake\s*Temperature[:\s]*([\d.]+)\s*°?\s*F/i,
+                /Water\s*Temp(?:erature)?[:\s]*([\d.]+)\s*°?\s*F/i,
+                /Kanopolis[\s\S]{0,500}?([\d]{2,3})\s*°?\s*F/i,
+            ];
+            for (const pattern of patterns) {
+                const match = html.match(pattern);
+                if (match) {
+                    const tempF = parseFloat(match[1]);
+                    if (!isNaN(tempF) && tempF > 0 && tempF < 120) {
+                        console.log(`[Lake Service] KDWP lake temperature: ${tempF}°F`);
+                        return tempF;
+                    }
                 }
             }
             console.log('[Lake Service] KDWP lake temperature not found in page');
