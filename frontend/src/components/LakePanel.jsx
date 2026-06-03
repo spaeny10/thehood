@@ -180,12 +180,12 @@ const LakePanel = ({ data }) => {
                             <span className="text-xs font-medium text-slate-400">Dam Outflow</span>
                         </div>
                         <p className="text-2xl font-bold text-white">
-                            {data.outflow_cfs != null ? data.outflow_cfs : '--'}
+                            {data.outflow_cfs != null ? Math.round(data.outflow_cfs) : '--'}
                             <span className="text-xs text-slate-500 ml-1">cfs</span>
                         </p>
                         {data.storage_acre_ft != null && (
                             <p className="text-xs text-slate-500 mt-1">
-                                {data.storage_acre_ft.toLocaleString()} acre-ft storage
+                                {Math.round(data.storage_acre_ft).toLocaleString()} acre-ft storage
                             </p>
                         )}
                     </div>
